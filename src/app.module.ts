@@ -34,7 +34,6 @@ import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
 import { UserProgress } from './models/user-progress.model';
 import { UserStreak } from './models/user-streak.model';
-import { UserLesson } from './models/user-lesson.model';
 import { CustomQuestionSet } from './models/custom-question-set.model';
 import { CustomQuestion } from './models/custom-question.model';
 import { Invitation } from './models/invitation.model';
@@ -87,7 +86,6 @@ import { Invitation } from './models/invitation.model';
       Question,
       UserProgress,
       UserStreak,
-      UserLesson,
       CustomQuestionSet,
       CustomQuestion,
       Invitation,
