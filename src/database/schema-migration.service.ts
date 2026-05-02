@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { DataTypes, QueryTypes, Sequelize } from 'sequelize';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
@@ -17,6 +18,7 @@ export class SchemaMigrationService implements OnModuleInit {
   private readonly logger = new Logger(SchemaMigrationService.name);
 
   constructor(
+    private readonly configService: ConfigService,
     @InjectConnection()
     private readonly sequelize: Sequelize,
     @InjectModel(TestYear)
@@ -26,15 +28,37 @@ export class SchemaMigrationService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    const runStartupMigrations = this.getBooleanEnv('RUN_STARTUP_MIGRATIONS', true);
+    if (!runStartupMigrations) {
+      this.logger.log('Skipping startup schema migrations because RUN_STARTUP_MIGRATIONS=false');
+      return;
+    }
+
     await this.ensureProfileSectionIdColumn();
-    await this.backfillProfilesLegacySectionTextToIds();
     await this.testYearModel.sync();
     await this.questionModel.sync();
     await this.removeSubjectIconColumn();
     await this.ensureSubjectBranchTypeColumn();
     await this.ensureQuestionTestYearColumn();
     await this.ensureQuestionMetadataColumns();
+
+    const runStartupBackfills = this.getBooleanEnv('RUN_STARTUP_BACKFILLS', false);
+    if (!runStartupBackfills) {
+      this.logger.log('Skipping startup data backfills; set RUN_STARTUP_BACKFILLS=true to enable them');
+      return;
+    }
+
+    await this.backfillProfilesLegacySectionTextToIds();
     await this.backfillTestYearsFromLegacyQuestions();
+  }
+
+  private getBooleanEnv(name: string, fallback: boolean): boolean {
+    const value = this.configService.get<string>(name);
+    if (value === undefined) {
+      return fallback;
+    }
+
+    return value === 'true';
   }
 
   /**

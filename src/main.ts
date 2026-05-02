@@ -10,6 +10,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     abortOnError: false,
   });
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '0.0.0.0';
+  const isProduction = process.env.NODE_ENV === 'production';
+  const enableSwagger = process.env.ENABLE_SWAGGER === 'true' || !isProduction;
 
   // Enable compression middleware
   app.use(compression());
@@ -21,29 +25,32 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  const config = new DocumentBuilder()
-    .setTitle('EXETAT Mastery API')
-    .setDescription('API for EXETAT Prep App - NestJS with Sequelize')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT-auth',
-    )
-    .build();
+  if (enableSwagger) {
+    const config = new DocumentBuilder()
+      .setTitle('EXETAT Mastery API')
+      .setDescription('API for EXETAT Prep App - NestJS with Sequelize')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config, {
-    ignoreGlobalPrefix: false,
-  });
+    const document = SwaggerModule.createDocument(app, config, {
+      ignoreGlobalPrefix: false,
+    });
 
-  // Serve Swagger UI at /api/v1/docs (matches the global prefix)
-  SwaggerModule.setup('api/v1/docs', app, document);
+    SwaggerModule.setup('api/v1/docs', app, document);
+  } else {
+    logger.log('Swagger is disabled in production startup');
+  }
 
   process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled promise rejection', reason instanceof Error ? reason.stack : String(reason));
@@ -53,8 +60,8 @@ async function bootstrap() {
     logger.error('Uncaught exception', error.stack);
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`Server running on http://localhost:${process.env.PORT ?? 3000}`);
+  await app.listen(port, host);
+  logger.log(`Server running on http://${host}:${port}`);
 }
 void bootstrap().catch((error: unknown) => {
   const logger = new Logger('Bootstrap');

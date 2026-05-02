@@ -56,23 +56,31 @@ import { Invitation } from './models/invitation.model';
     }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        dialect: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASS'),
-        database: configService.get<string>('DB_NAME'),
-        dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false,
+      useFactory: (configService: ConfigService) => {
+        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        const synchronize = configService.get<string>('DB_SYNCHRONIZE');
+        const shouldSynchronize = synchronize
+          ? synchronize === 'true'
+          : !isProduction;
+
+        return {
+          dialect: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USER'),
+          password: configService.get<string>('DB_PASS'),
+          database: configService.get<string>('DB_NAME'),
+          dialectOptions: {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false,
+            },
           },
-        },
-        autoLoadModels: true,
-        synchronize: true,
-        logging: configService.get<string>('NODE_ENV') === 'development' ? console.log : false,
-      }),
+          autoLoadModels: true,
+          synchronize: shouldSynchronize,
+          logging: configService.get<string>('NODE_ENV') === 'development' ? console.log : false,
+        };
+      },
       inject: [ConfigService],
     }),
     SequelizeModule.forFeature([
