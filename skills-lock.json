@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "nestjs-expert": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-expert/SKILL.md",
+      "computedHash": "0775f4ba14e4f372b894cc86feb0bf58a51b2038bc98b3ff18f2021565cea494"
+    },
+    "sequelize": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "sequelize/SKILL.md",
+      "computedHash": "5ebc2439de2c788660ec8f48178b4828da03ab118900ec9f0c36addc1336a2a8"
+    }
+  }
+}
