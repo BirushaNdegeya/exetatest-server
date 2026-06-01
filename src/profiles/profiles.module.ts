@@ -4,14 +4,10 @@ import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
 import { Profile } from '../models/profile.model';
 import { User } from '../models/user.model';
-import { Section } from '../models/section.model';
 import { SectionsModule } from '../sections/sections.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Profile, User, Section]),
-    SectionsModule,
-  ],
+  imports: [SequelizeModule.forFeature([Profile, User]), SectionsModule],
   providers: [ProfilesService],
   controllers: [ProfilesController],
   exports: [ProfilesService],

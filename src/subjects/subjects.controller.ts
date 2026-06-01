@@ -119,7 +119,7 @@ export class SubjectsController {
         value: {
           name: 'Culture Generale',
           description: 'Gerer les questions par categorie et par annee',
-          section_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+          section_id: 'mecanique-generale',
         },
       },
     },
@@ -159,7 +159,7 @@ export class SubjectsController {
         value: {
           name: 'Culture Generale',
           description: 'Questions classees par section, sujet et annee',
-          section_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+          section_id: 'mecanique-generale',
         },
       },
     },

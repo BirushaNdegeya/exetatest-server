@@ -1,13 +1,4 @@
-import {
-  Column,
-  DataType,
-  Model,
-  Table,
-  ForeignKey,
-  BelongsTo,
-  HasMany,
-} from 'sequelize-typescript';
-import { Section } from './section.model';
+import { Column, DataType, Model, Table, HasMany } from 'sequelize-typescript';
 import { TestYear } from './test-year.model';
 
 interface SubjectCreationAttributes {
@@ -50,15 +41,12 @@ export class Subject extends Model<Subject, SubjectCreationAttributes> {
   })
   declare branch_type: string;
 
-  @ForeignKey(() => Section)
+  /** Slug from the DRC sections catalog (`GET /sections`). */
   @Column({
-    type: DataType.UUID,
+    type: DataType.STRING(64),
     allowNull: false,
   })
   declare section_id: string;
-
-  @BelongsTo(() => Section)
-  declare section: Section;
 
   @HasMany(() => TestYear)
   declare testYears: TestYear[];

@@ -43,9 +43,8 @@ export class CreateSubjectDto {
 
   @ApiProperty({
     description:
-      'Required parent section ID. Flow: section -> subject -> test year blocks -> questions.',
-    example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    format: 'uuid',
+      'Required parent section slug from GET /sections. Flow: section -> subject -> test year blocks -> questions.',
+    example: 'mecanique-generale',
   })
   @IsString()
   section_id: string;

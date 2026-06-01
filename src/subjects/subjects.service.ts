@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { DRC_SECTIONS } from '../sections/drc-sections.constants';
 import { InjectModel } from '@nestjs/sequelize';
 import { Subject } from '../models/subject.model';
 import { Question } from '../models/question.model';
-import { Section } from '../models/section.model';
 import { TestYear } from '../models/test-year.model';
 
 @Injectable()
@@ -22,7 +26,7 @@ export class SubjectsService {
     const where = sectionId ? { section_id: sectionId } : {};
     const subjects = await this.subjectModel.findAll({
       where,
-      include: [Section, TestYear],
+      include: [TestYear],
       order: [['createdAt', 'DESC']],
     });
 
@@ -71,6 +75,7 @@ export class SubjectsService {
     section_id: string;
     branch_type: string;
   }): Promise<Subject> {
+    this.assertValidSectionId(data.section_id);
     return this.subjectModel.create(data);
   }
 
@@ -84,6 +89,9 @@ export class SubjectsService {
     },
   ): Promise<Subject> {
     const subject = await this.findSubjectEntityById(id);
+    if (data.section_id !== undefined) {
+      this.assertValidSectionId(data.section_id);
+    }
     await subject.update(data);
     return subject;
   }
@@ -105,9 +113,15 @@ export class SubjectsService {
     await subject.destroy();
   }
 
+  private assertValidSectionId(sectionId: string): void {
+    if (!DRC_SECTIONS.some((section) => section.id === sectionId)) {
+      throw new BadRequestException('Section introuvable.');
+    }
+  }
+
   private async findSubjectEntityById(id: string): Promise<Subject> {
     const subject = await this.subjectModel.findByPk(id, {
-      include: [Section, TestYear],
+      include: [TestYear],
     });
 
     if (!subject) {

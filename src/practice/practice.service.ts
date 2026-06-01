@@ -5,7 +5,7 @@ import { StreaksService } from '../streaks/streaks.service';
 import { SubjectsService } from '../subjects/subjects.service';
 import { TestYearsService } from '../test-years/test-years.service';
 import { ProfileResponseDto } from '../profiles/dto/profile-response.dto';
-import { Section } from '../models/section.model';
+import { DrcSection } from '../sections/drc-sections.constants';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
 
 export interface PracticeYearBlock {
@@ -26,7 +26,7 @@ export interface PracticeSubjectRow {
 
 export interface PracticePageResponse {
   profile: ProfileResponseDto;
-  sections: Pick<Section, 'id' | 'name'>[];
+  sections: Pick<DrcSection, 'id' | 'title'>[];
   streak: {
     current_streak: number;
     longest_streak: number;
@@ -49,13 +49,13 @@ export class PracticeService {
   async getPracticePage(userId: string): Promise<PracticePageResponse> {
     const [profile, sectionEntities, streakEntity] = await Promise.all([
       this.profilesService.getProfileByUserId(userId),
-      this.sectionsService.getAllSections(),
+      Promise.resolve(this.sectionsService.getAllSections()),
       this.streaksService.getStreakByUserId(userId),
     ]);
 
     const sections = sectionEntities.map((s) => ({
       id: s.id,
-      name: s.name,
+      title: s.title,
     }));
 
     let profileOut: ProfileResponseDto = profile;
@@ -68,12 +68,12 @@ export class PracticeService {
         await this.profilesService.persistMatchedLegacySection(
           userId,
           legacyMatch.id,
-          legacyMatch.name,
+          legacyMatch.title,
         );
         profileOut = {
           ...profile,
           section_id: legacyMatch.id,
-          section: legacyMatch.name,
+          section: legacyMatch.title,
         };
       }
     }

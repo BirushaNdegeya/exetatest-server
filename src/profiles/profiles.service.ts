@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Profile } from '../models/profile.model';
 import { User } from '../models/user.model';
-import { Section } from '../models/section.model';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileResponseDto } from './dto/profile-response.dto';
 import { SectionsService } from '../sections/sections.service';
@@ -18,12 +17,21 @@ export class ProfilesService {
     private readonly sectionsService: SectionsService,
   ) {}
 
+  private resolveSectionLabel(profile: Profile): string | null {
+    if (profile.section_id) {
+      const catalog = this.sectionsService.findById(profile.section_id);
+      if (catalog) {
+        return catalog.title;
+      }
+    }
+    return profile.section ?? null;
+  }
+
   private toProfileResponse(profile: Profile, user: User): ProfileResponseDto {
-    const sectionName = profile.sectionEntity?.name ?? profile.section ?? null;
     return {
       id: profile.id,
       email: user.email,
-      section: sectionName,
+      section: this.resolveSectionLabel(profile),
       section_id: profile.section_id ?? null,
       xp: profile.xp ?? 0,
       created_at: profile.createdAt,
@@ -45,10 +53,10 @@ export class ProfilesService {
     if (profile.section_id || !profile.section?.trim()) {
       return;
     }
-    const sections = await this.sectionsService.getAllSections();
+    const sections = this.sectionsService.getAllSections();
     const match = findSectionMatchingLegacyLabel(profile.section, sections);
     if (match) {
-      await profile.update({ section_id: match.id, section: match.name });
+      await profile.update({ section_id: match.id, section: match.title });
     }
   }
 
@@ -58,10 +66,10 @@ export class ProfilesService {
   async persistMatchedLegacySection(
     userId: string,
     sectionId: string,
-    canonicalName: string,
+    canonicalTitle: string,
   ): Promise<void> {
     await this.profileModel.update(
-      { section_id: sectionId, section: canonicalName },
+      { section_id: sectionId, section: canonicalTitle },
       { where: { userId } },
     );
   }
@@ -71,7 +79,6 @@ export class ProfilesService {
 
     let profile = await this.profileModel.findOne({
       where: { userId },
-      include: [{ model: Section, required: false }],
     });
 
     if (!profile) {
@@ -80,7 +87,6 @@ export class ProfilesService {
       });
       profile = await this.profileModel.findOne({
         where: { userId },
-        include: [{ model: Section, required: false }],
       });
     }
 
@@ -89,13 +95,13 @@ export class ProfilesService {
     }
 
     await this.backfillSectionIdFromLegacyString(profile);
-    await profile.reload({ include: [{ model: Section, required: false }] });
+    await profile.reload();
 
     return this.toProfileResponse(profile, user);
   }
 
   /**
-   * Partial PATCH. `section_id` is validated against `sections`; legacy `section` string column
+   * Partial PATCH. `section_id` is validated against the DRC catalog; legacy `section` string column
    * is kept in sync for display. `users.name` is updated for session UI.
    */
   async updateProfile(
@@ -106,7 +112,6 @@ export class ProfilesService {
 
     let profile = await this.profileModel.findOne({
       where: { userId },
-      include: [{ model: Section, required: false }],
     });
 
     if (!profile) {
@@ -115,7 +120,6 @@ export class ProfilesService {
       });
       profile = await this.profileModel.findOne({
         where: { userId },
-        include: [{ model: Section, required: false }],
       });
       if (!profile) {
         throw new NotFoundException('Profil introuvable');
@@ -131,13 +135,13 @@ export class ProfilesService {
     const updatePayload: Record<string, unknown> = { ...patch };
 
     if (Object.prototype.hasOwnProperty.call(patch, 'section_id')) {
-      const resolved = await this.sectionsService.resolveSectionIdForProfile(
+      const resolved = this.sectionsService.resolveSectionIdForProfile(
         patch.section_id as string | null,
       );
       updatePayload.section_id = resolved;
       if (resolved) {
-        const sec = await this.sectionsService.getSectionById(resolved);
-        updatePayload.section = sec.name;
+        const sec = this.sectionsService.getSectionById(resolved);
+        updatePayload.section = sec.title;
       } else {
         updatePayload.section = null;
       }
@@ -145,7 +149,7 @@ export class ProfilesService {
 
     if (Object.keys(updatePayload).length > 0) {
       await profile.update(updatePayload);
-      await profile.reload({ include: [{ model: Section, required: false }] });
+      await profile.reload();
     }
 
     await user.reload();

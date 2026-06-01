@@ -32,7 +32,7 @@ export class PracticeController {
           email: 'student@example.com',
           section: 'MECANIQUE GENERALE',
         },
-        sections: [{ id: '…', name: 'MECANIQUE GENERALE' }],
+        sections: [{ id: 'mecanique-generale', title: 'MÉCANIQUE GÉNÉRALE' }],
         streak: {
           current_streak: 3,
           longest_streak: 10,

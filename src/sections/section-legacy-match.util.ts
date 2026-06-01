@@ -1,8 +1,8 @@
 /**
- * Match profiles.section (legacy free text) to a sections row for backfill and practice.
+ * Match profiles.section (legacy free text) to a catalog section for backfill and practice.
  */
 
-export type SectionLike = { id: string; name: string };
+export type SectionLike = { id: string; title: string };
 
 export function normalizeSectionKey(value: string): string {
   return value
@@ -30,21 +30,21 @@ export function findSectionMatchingLegacyLabel(
   }
 
   const n = normalizeSectionKey(legacy);
-  const exact = sections.find((s) => normalizeSectionKey(s.name) === n);
+  const exact = sections.find((s) => normalizeSectionKey(s.title) === n);
   if (exact) {
     return exact;
   }
 
   const compactLegacy = compactKey(legacy);
   const compactHits = sections.filter(
-    (s) => compactKey(s.name) === compactLegacy,
+    (s) => compactKey(s.title) === compactLegacy,
   );
   if (compactHits.length === 1) {
     return compactHits[0];
   }
 
   const subHits = sections.filter((s) => {
-    const sn = normalizeSectionKey(s.name);
+    const sn = normalizeSectionKey(s.title);
     return sn.includes(n) || n.includes(sn);
   });
   if (subHits.length === 1) {

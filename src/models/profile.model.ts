@@ -7,7 +7,6 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { User } from './user.model';
-import { Section } from './section.model';
 
 interface ProfileCreationAttributes {
   userId: string;
@@ -39,22 +38,18 @@ export class Profile extends Model<Profile, ProfileCreationAttributes> {
   @BelongsTo(() => User)
   user: User;
 
-  /** Legacy display copy; canonical link is section_id */
+  /** Legacy display copy; canonical link is section_id (DRC catalog slug). */
   @Column({
     type: DataType.STRING,
     allowNull: true,
   })
   section: string | null;
 
-  @ForeignKey(() => Section)
   @Column({
-    type: DataType.UUID,
+    type: DataType.STRING(64),
     allowNull: true,
   })
   section_id: string | null;
-
-  @BelongsTo(() => Section)
-  sectionEntity: Section;
 
   @Column({
     type: DataType.INTEGER,

@@ -28,7 +28,6 @@ import { User } from './models/user.model';
 import { Profile } from './models/profile.model';
 import { UserRole } from './models/user-role.model';
 import { Otp } from './models/otp.model';
-import { Section } from './models/section.model';
 import { Subject } from './models/subject.model';
 import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
@@ -92,7 +91,6 @@ import { Invitation } from './models/invitation.model';
       Profile,
       UserRole,
       Otp,
-      Section,
       Subject,
       TestYear,
       Question,

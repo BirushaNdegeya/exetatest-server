@@ -1,26 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Question } from '../models/question.model';
-import { Section } from '../models/section.model';
 import { User } from '../models/user.model';
 import { UserRole } from '../models/user-role.model';
+import { DRC_SECTIONS } from '../sections/drc-sections.constants';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectModel(Question)
     private questionModel: typeof Question,
-    @InjectModel(Section)
-    private sectionModel: typeof Section,
     @InjectModel(User)
     private userModel: typeof User,
     @InjectModel(UserRole)
     private userRoleModel: typeof UserRole,
   ) {}
 
-  async getStats(): Promise<any> {
+  async getStats(): Promise<{
+    totalQuestions: number;
+    totalSections: number;
+    totalUsers: number;
+    totalAdmins: number;
+    adminList: { user_id: string; display_name: string }[];
+  }> {
     const totalQuestions = await this.questionModel.count();
-    const totalSections = await this.sectionModel.count();
+    const totalSections = DRC_SECTIONS.length;
     const totalUsers = await this.userModel.count();
 
     const adminRoles = await this.userRoleModel.findAll({

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { DataTypes, QueryTypes, Sequelize } from 'sequelize';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
+import { DRC_SECTIONS } from '../sections/drc-sections.constants';
 import { Question } from '../models/question.model';
 import { TestYear } from '../models/test-year.model';
 import { SUBJECT_BRANCH_TYPES } from '../subjects/dto/create-subject.dto';
@@ -11,6 +12,11 @@ interface LegacyQuestionRow {
   id: string;
   subject_id: string;
   year: number;
+}
+
+interface DbSectionRow {
+  id: string;
+  name: string;
 }
 
 @Injectable()
@@ -39,6 +45,7 @@ export class SchemaMigrationService implements OnModuleInit {
       return;
     }
 
+    await this.migrateSectionsTableToStaticCatalog();
     await this.ensureProfileSectionIdColumn();
     await this.testYearModel.sync();
     await this.questionModel.sync();
@@ -72,8 +79,121 @@ export class SchemaMigrationService implements OnModuleInit {
   }
 
   /**
-   * Sequelize sync does not always ALTER existing `profiles` when a new FK is added;
-   * ensures `profiles.section_id` exists (FK → sections.id).
+   * Replaces the old `sections` table with the in-code DRC catalog:
+   * maps UUID FKs to catalog slugs, drops FKs, and removes the table.
+   */
+  private async migrateSectionsTableToStaticCatalog(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let sectionsTable: Record<string, unknown> | null = null;
+
+    try {
+      sectionsTable = await queryInterface.describeTable('sections');
+    } catch {
+      await this.ensureSectionIdColumnsAreStringSlugs();
+      return;
+    }
+
+    if (!sectionsTable) {
+      return;
+    }
+
+    try {
+      const dbSections = await this.sequelize.query<DbSectionRow>(
+        'SELECT id, name FROM sections',
+        { type: QueryTypes.SELECT },
+      );
+
+      const catalog = DRC_SECTIONS.map((section) => ({
+        id: section.id,
+        title: section.title,
+      }));
+
+      for (const row of dbSections) {
+        const match = findSectionMatchingLegacyLabel(row.name, catalog);
+        if (!match) {
+          this.logger.warn(
+            `No DRC catalog match for legacy section "${row.name}" (${row.id})`,
+          );
+          continue;
+        }
+
+        await this.sequelize.query(
+          `UPDATE subjects SET section_id = :slug WHERE section_id::text = :oldId`,
+          { replacements: { slug: match.id, oldId: row.id } },
+        );
+        await this.sequelize.query(
+          `UPDATE profiles SET section_id = :slug, section = :title WHERE section_id::text = :oldId`,
+          {
+            replacements: {
+              slug: match.id,
+              title: match.title,
+              oldId: row.id,
+            },
+          },
+        );
+      }
+
+      await this.dropSectionForeignKeys(queryInterface);
+      await this.ensureSectionIdColumnsAreStringSlugs();
+      await queryInterface.dropTable('sections');
+      this.logger.log(
+        'Dropped sections table; section_id now uses DRC catalog slugs',
+      );
+    } catch (e) {
+      this.logger.warn(
+        `migrateSectionsTableToStaticCatalog skipped: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
+  private async dropSectionForeignKeys(
+    queryInterface: ReturnType<Sequelize['getQueryInterface']>,
+  ): Promise<void> {
+    const constraints: Array<{ table: string; name: string }> = [
+      { table: 'profiles', name: 'profiles_section_id_fkey' },
+      { table: 'subjects', name: 'subjects_section_id_fkey' },
+    ];
+
+    for (const { table, name } of constraints) {
+      try {
+        await queryInterface.removeConstraint(table, name);
+      } catch {
+        // Constraint may already be absent or use a different name.
+      }
+    }
+  }
+
+  private async ensureSectionIdColumnsAreStringSlugs(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+
+    for (const table of ['profiles', 'subjects'] as const) {
+      try {
+        const described = await queryInterface.describeTable(table);
+        const column = described.section_id;
+        if (!column) {
+          continue;
+        }
+
+        const typeKey = String(column.type);
+        if (!typeKey.includes('uuid') && !typeKey.includes('UUID')) {
+          continue;
+        }
+
+        await queryInterface.changeColumn(table, 'section_id', {
+          type: DataTypes.STRING(64),
+          allowNull: table === 'profiles',
+        });
+        this.logger.log(`Converted ${table}.section_id to VARCHAR(64) slug`);
+      } catch (e) {
+        this.logger.warn(
+          `ensureSectionIdColumnsAreStringSlugs(${table}) skipped: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Ensures `profiles.section_id` exists as a string slug (no FK).
    */
   private async ensureProfileSectionIdColumn(): Promise<void> {
     const queryInterface = this.sequelize.getQueryInterface();
@@ -92,25 +212,19 @@ export class SchemaMigrationService implements OnModuleInit {
     }
 
     await queryInterface.addColumn('profiles', 'section_id', {
-      type: DataTypes.UUID,
+      type: DataTypes.STRING(64),
       allowNull: true,
-      references: { model: 'sections', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
     });
-    this.logger.log('Added profiles.section_id column (FK → sections.id)');
+    this.logger.log('Added profiles.section_id column (DRC catalog slug)');
   }
 
-  /** Links profiles.section_id from legacy profiles.section when names match (spacing / case / accents). */
+  /** Links profiles.section_id from legacy profiles.section when labels match the catalog. */
   private async backfillProfilesLegacySectionTextToIds(): Promise<void> {
     try {
-      const sections = await this.sequelize.query<{ id: string; name: string }>(
-        'SELECT id, name FROM sections',
-        { type: QueryTypes.SELECT },
-      );
-      if (sections.length === 0) {
-        return;
-      }
+      const catalog = DRC_SECTIONS.map((section) => ({
+        id: section.id,
+        title: section.title,
+      }));
 
       const profiles = await this.sequelize.query<{
         id: string;
@@ -121,12 +235,18 @@ export class SchemaMigrationService implements OnModuleInit {
       );
 
       let updated = 0;
-      for (const p of profiles) {
-        const match = findSectionMatchingLegacyLabel(p.section, sections);
+      for (const profile of profiles) {
+        const match = findSectionMatchingLegacyLabel(profile.section, catalog);
         if (match) {
           await this.sequelize.query(
-            `UPDATE profiles SET section_id = :sid, section = :sname WHERE id = :pid`,
-            { replacements: { sid: match.id, sname: match.name, pid: p.id } },
+            `UPDATE profiles SET section_id = :sid, section = :stitle WHERE id = :pid`,
+            {
+              replacements: {
+                sid: match.id,
+                stitle: match.title,
+                pid: profile.id,
+              },
+            },
           );
           updated += 1;
         }

@@ -58,6 +58,7 @@ For every feature:
 7. Refactor only when repetition or complexity appears.
 8. Keep the API easy to teach and explain.
 9. Speed-first API design: cache aggressively, optimize every request, and keep each one minimal.
+10. Each modification update the swagger documentation
 ---
 
 ## Architecture

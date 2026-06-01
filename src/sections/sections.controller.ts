@@ -1,27 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SectionsService } from './sections.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRoleEnum } from '../models/user-role.model';
-import { CreateSectionDto } from './dto/create-section.dto';
+import { SectionResponseDto } from './dto/section-response.dto';
 
 @ApiTags('sections')
 @Controller('sections')
@@ -30,34 +10,23 @@ export class SectionsController {
 
   @Get()
   @ApiOperation({
-    summary: 'List sections',
+    summary: 'List DRC exam sections',
     description:
-      'Returns the top level of the hierarchy. Each section contains subjects, each subject contains test-year blocks, and each test-year block contains questions.',
+      'Returns the fixed catalog of DRC exam sections (no database table). Each section groups subjects; subjects group test-year blocks; blocks group questions.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Returns all sections',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string', example: 'Mathematics' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
+    description: 'Returns all DRC sections',
+    type: [SectionResponseDto],
   })
-  async getAllSections() {
+  getAllSections(): SectionResponseDto[] {
     return this.sectionsService.getAllSections();
   }
 
   @Get('count')
   @ApiOperation({
     summary: 'Get section count',
-    description: 'Returns how many top-level sections exist in the hierarchy.',
+    description: 'Returns how many sections exist in the DRC catalog.',
   })
   @ApiResponse({
     status: 200,
@@ -65,113 +34,11 @@ export class SectionsController {
     schema: {
       type: 'object',
       properties: {
-        count: { type: 'number', example: 12 },
+        count: { type: 'number', example: 30 },
       },
     },
   })
-  async getSectionCount() {
-    return { count: await this.sectionsService.getSectionCount() };
-  }
-
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Create a section',
-    description:
-      'Creates a top-level section that can later contain multiple subjects.',
-  })
-  @ApiBody({ type: CreateSectionDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Section created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', format: 'uuid' },
-        name: { type: 'string', example: 'Mathematics' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async createSection(@Body() createSectionDto: CreateSectionDto) {
-    return this.sectionsService.createSection(createSectionDto);
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Update a section',
-    description:
-      'Updates the name of a top-level section that groups subjects.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Section ID',
-    schema: { type: 'string', format: 'uuid' },
-  })
-  @ApiBody({ type: CreateSectionDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Section updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', format: 'uuid' },
-        name: { type: 'string', example: 'Mathematics' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Section not found' })
-  async updateSection(
-    @Param('id') id: string,
-    @Body() updateSectionDto: CreateSectionDto,
-  ) {
-    return this.sectionsService.updateSection(id, updateSectionDto);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Delete a section',
-    description:
-      'Deletes a top-level section. Any dependent subject hierarchy rules are handled by the service layer and database constraints.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Section ID',
-    schema: { type: 'string', format: 'uuid' },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Section deleted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Section deleted successfully',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Section not found' })
-  async deleteSection(@Param('id') id: string) {
-    await this.sectionsService.deleteSection(id);
-    return { message: 'Section deleted successfully' };
+  getSectionCount() {
+    return { count: this.sectionsService.getSectionCount() };
   }
 }
