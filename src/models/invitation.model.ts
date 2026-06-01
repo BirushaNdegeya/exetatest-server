@@ -1,4 +1,11 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { User } from './user.model';
 import { CustomQuestionSet } from './custom-question-set.model';
 
@@ -19,7 +26,10 @@ interface InvitationCreationAttributes {
   tableName: 'invitations',
   timestamps: true,
 })
-export class Invitation extends Model<Invitation, InvitationCreationAttributes> {
+export class Invitation extends Model<
+  Invitation,
+  InvitationCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

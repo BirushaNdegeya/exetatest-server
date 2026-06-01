@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Invitation, InvitationStatusEnum } from '../models/invitation.model';
 import { CustomQuestionSet } from '../models/custom-question-set.model';
@@ -32,7 +36,10 @@ export class InvitationsService {
     });
   }
 
-  async getSentInvitations(userId: string, setId?: string): Promise<Invitation[]> {
+  async getSentInvitations(
+    userId: string,
+    setId?: string,
+  ): Promise<Invitation[]> {
     const where: any = { inviter_id: userId };
     if (setId) where.set_id = setId;
 
@@ -55,7 +62,9 @@ export class InvitationsService {
     // Verify user owns the set
     const set = await this.customSetModel.findByPk(data.set_id);
     if (!set || set.creator_id !== userId) {
-      throw new ForbiddenException('You can only invite people to your own sets');
+      throw new ForbiddenException(
+        'You can only invite people to your own sets',
+      );
     }
 
     // Create invitation
@@ -120,12 +129,15 @@ export class InvitationsService {
       responded_at: new Date(),
     });
 
-    const updatedInvitation = await this.invitationModel.findByPk(invitationId, {
-      include: [
-        { model: CustomQuestionSet, as: 'set' },
-        { model: User, as: 'inviter' },
-      ],
-    });
+    const updatedInvitation = await this.invitationModel.findByPk(
+      invitationId,
+      {
+        include: [
+          { model: CustomQuestionSet, as: 'set' },
+          { model: User, as: 'inviter' },
+        ],
+      },
+    );
 
     if (!updatedInvitation) {
       throw new NotFoundException('Invitation not found after update');
@@ -142,7 +154,9 @@ export class InvitationsService {
 
     // Only inviter can delete
     if (invitation.inviter_id !== userId) {
-      throw new ForbiddenException('Only the inviter can delete this invitation');
+      throw new ForbiddenException(
+        'Only the inviter can delete this invitation',
+      );
     }
 
     await invitation.destroy();

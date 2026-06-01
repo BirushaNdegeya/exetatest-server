@@ -15,7 +15,8 @@ export class SubjectResponseDto {
   name: string;
 
   @ApiPropertyOptional({
-    description: 'Optional description of the subject content and its test-year question structure',
+    description:
+      'Optional description of the subject content and its test-year question structure',
     example: 'Questions de culture generale organisees par annee',
     nullable: true,
   })
@@ -28,20 +29,23 @@ export class SubjectResponseDto {
   branch_type: string;
 
   @ApiProperty({
-    description: 'Parent section ID for this subject. Flow: section -> subject -> test year blocks -> questions.',
+    description:
+      'Parent section ID for this subject. Flow: section -> subject -> test year blocks -> questions.',
     example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     format: 'uuid',
   })
   section_id: string;
 
   @ApiPropertyOptional({
-    description: 'Number of test-year blocks attached to this subject when included in the response',
+    description:
+      'Number of test-year blocks attached to this subject when included in the response',
     example: 3,
   })
   year_count?: number;
 
   @ApiPropertyOptional({
-    description: 'Total questions across all test-year blocks for this subject when included in the response',
+    description:
+      'Total questions across all test-year blocks for this subject when included in the response',
     example: 120,
   })
   question_count?: number;

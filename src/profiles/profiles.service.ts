@@ -23,14 +23,8 @@ export class ProfilesService {
     return {
       id: profile.id,
       email: user.email,
-      display_name: profile.display_name ?? null,
-      prenom: profile.prenom ?? null,
-      postnom: profile.postnom ?? null,
-      nom: profile.nom ?? null,
-      matricule: profile.matricule ?? null,
       section: sectionName,
       section_id: profile.section_id ?? null,
-      avatar_url: profile.avatar_url ?? null,
       xp: profile.xp ?? 0,
       created_at: profile.createdAt,
       updated_at: profile.updatedAt,
@@ -45,7 +39,9 @@ export class ProfilesService {
     return user;
   }
 
-  private async backfillSectionIdFromLegacyString(profile: Profile): Promise<void> {
+  private async backfillSectionIdFromLegacyString(
+    profile: Profile,
+  ): Promise<void> {
     if (profile.section_id || !profile.section?.trim()) {
       return;
     }
@@ -59,7 +55,11 @@ export class ProfilesService {
   /**
    * Persists section_id when legacy text matches (safety net for GET /practice after matcher improvements).
    */
-  async persistMatchedLegacySection(userId: string, sectionId: string, canonicalName: string): Promise<void> {
+  async persistMatchedLegacySection(
+    userId: string,
+    sectionId: string,
+    canonicalName: string,
+  ): Promise<void> {
     await this.profileModel.update(
       { section_id: sectionId, section: canonicalName },
       { where: { userId } },
@@ -77,7 +77,6 @@ export class ProfilesService {
     if (!profile) {
       await this.profileModel.create({
         userId,
-        display_name: user.name || user.email.split('@')[0] || null,
       });
       profile = await this.profileModel.findOne({
         where: { userId },
@@ -99,7 +98,10 @@ export class ProfilesService {
    * Partial PATCH. `section_id` is validated against `sections`; legacy `section` string column
    * is kept in sync for display. `users.name` is updated for session UI.
    */
-  async updateProfile(userId: string, data: UpdateProfileDto): Promise<ProfileResponseDto> {
+  async updateProfile(
+    userId: string,
+    data: UpdateProfileDto,
+  ): Promise<ProfileResponseDto> {
     const user = await this.getUserOrFail(userId);
 
     let profile = await this.profileModel.findOne({
@@ -110,7 +112,6 @@ export class ProfilesService {
     if (!profile) {
       profile = await this.profileModel.create({
         userId,
-        display_name: user.name || user.email.split('@')[0] || null,
       });
       profile = await this.profileModel.findOne({
         where: { userId },
@@ -122,7 +123,9 @@ export class ProfilesService {
     }
 
     const patch = Object.fromEntries(
-      Object.entries(data as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      Object.entries(data as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      ),
     ) as UpdateProfileDto & Record<string, unknown>;
 
     const updatePayload: Record<string, unknown> = { ...patch };
@@ -147,24 +150,12 @@ export class ProfilesService {
 
     await user.reload();
 
-    const displayForName =
-      profile.display_name?.trim() ||
-      [profile.prenom, profile.nom].filter(Boolean).join(' ').trim() ||
-      user.email.split('@')[0] ||
-      'User';
-
-    if (displayForName !== user.name) {
-      await user.update({ name: displayForName });
-      await user.reload();
-    }
-
     return this.toProfileResponse(profile, user);
   }
 
-  async createProfile(userId: string, displayName?: string): Promise<Profile> {
+  async createProfile(userId: string): Promise<Profile> {
     return this.profileModel.create({
       userId,
-      display_name: displayName || null,
     });
   }
 }

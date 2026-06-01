@@ -24,7 +24,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // Google OAuth endpoints removed – using email + OTP only
 
@@ -149,7 +149,10 @@ export class AuthController {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'Avatar updated successfully' },
-        avatarUrl: { type: 'string', example: 'https://res.cloudinary.com/...' },
+        avatarUrl: {
+          type: 'string',
+          example: 'https://res.cloudinary.com/...',
+        },
       },
     },
   })

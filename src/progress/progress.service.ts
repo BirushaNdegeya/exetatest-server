@@ -15,7 +15,10 @@ export class ProgressService {
     private userProgressModel: typeof UserProgress,
   ) {}
 
-  async getUserProgress(userId: string, questionId?: string): Promise<UserProgress[]> {
+  async getUserProgress(
+    userId: string,
+    questionId?: string,
+  ): Promise<UserProgress[]> {
     const where: any = { userId };
     if (questionId) where.question_id = questionId;
 

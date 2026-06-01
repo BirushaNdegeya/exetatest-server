@@ -1,4 +1,11 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { User } from './user.model';
 import { Question } from './question.model';
 
@@ -12,7 +19,10 @@ interface UserProgressCreationAttributes {
   tableName: 'user_progress',
   timestamps: true,
 })
-export class UserProgress extends Model<UserProgress, UserProgressCreationAttributes> {
+export class UserProgress extends Model<
+  UserProgress,
+  UserProgressCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

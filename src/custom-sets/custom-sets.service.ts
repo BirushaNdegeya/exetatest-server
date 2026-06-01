@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CustomQuestionSet } from '../models/custom-question-set.model';
 import { CustomQuestion } from '../models/custom-question.model';
@@ -60,7 +64,9 @@ export class CustomSetsService {
   ): Promise<CustomQuestionSet> {
     const set = await this.getCustomSetById(id);
     if (set.creator_id !== userId) {
-      throw new ForbiddenException('Vous ne pouvez modifier que vos propres ensembles');
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier que vos propres ensembles',
+      );
     }
     await set.update(data);
     return set;
@@ -69,7 +75,9 @@ export class CustomSetsService {
   async deleteCustomSet(userId: string, id: string): Promise<void> {
     const set = await this.getCustomSetById(id);
     if (set.creator_id !== userId) {
-      throw new ForbiddenException('Vous ne pouvez supprimer que vos propres ensembles');
+      throw new ForbiddenException(
+        'Vous ne pouvez supprimer que vos propres ensembles',
+      );
     }
     await set.destroy();
   }

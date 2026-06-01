@@ -14,7 +14,11 @@ export class SubjectsService {
     private testYearModel: typeof TestYear,
   ) {}
 
-  async getAllSubjects(sectionId?: string): Promise<Array<Subject & { year_count?: number; question_count?: number }>> {
+  async getAllSubjects(
+    sectionId?: string,
+  ): Promise<
+    Array<Subject & { year_count?: number; question_count?: number }>
+  > {
     const where = sectionId ? { section_id: sectionId } : {};
     const subjects = await this.subjectModel.findAll({
       where,
@@ -24,34 +28,29 @@ export class SubjectsService {
 
     return Promise.all(
       subjects.map(async (subject) => {
-        const jsonSubject = subject.toJSON() as Subject & { testYears?: TestYear[]; year_count?: number; question_count?: number };
-        jsonSubject.year_count = jsonSubject.testYears?.length ?? 0;
-        jsonSubject.question_count = await this.getQuestionCount(subject.id);
-        const { testYears, ...subjectWithoutYears } = jsonSubject as Subject & {
-          testYears?: TestYear[];
-          year_count?: number;
-          question_count?: number;
-        };
-        void testYears;
-        return subjectWithoutYears as Subject & { year_count?: number; question_count?: number };
+        const year_count = subject.testYears?.length ?? 0;
+        const question_count = await this.getQuestionCount(subject.id);
+        return {
+          ...subject.toJSON(),
+          year_count,
+          question_count,
+        } as Subject & { year_count?: number; question_count?: number };
       }),
     );
   }
 
-  async getSubjectById(id: string): Promise<Subject & { year_count?: number; question_count?: number }> {
+  async getSubjectById(
+    id: string,
+  ): Promise<Subject & { year_count?: number; question_count?: number }> {
     const subject = await this.findSubjectEntityById(id);
 
-    const jsonSubject = subject.toJSON() as Subject & { testYears?: TestYear[]; year_count?: number; question_count?: number };
-    jsonSubject.year_count = jsonSubject.testYears?.length ?? 0;
-    jsonSubject.question_count = await this.getQuestionCount(subject.id);
-    const { testYears, ...subjectWithoutYears } = jsonSubject as Subject & {
-      testYears?: TestYear[];
-      year_count?: number;
-      question_count?: number;
-    };
-    void testYears;
-
-    return subjectWithoutYears as Subject & { year_count?: number; question_count?: number };
+    const year_count = subject.testYears?.length ?? 0;
+    const question_count = await this.getQuestionCount(subject.id);
+    return {
+      ...subject.toJSON(),
+      year_count,
+      question_count,
+    } as Subject & { year_count?: number; question_count?: number };
   }
 
   async getQuestionCount(subjectId: string): Promise<number> {

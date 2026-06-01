@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../models/user.model';
@@ -14,7 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   async validateUser(email: string): Promise<User | null> {
     return this.userModel.findOne({ where: { email } });
@@ -90,7 +95,10 @@ export class AuthService {
    * Send OTP to user's email
    * Throws NotFoundException if email doesn't exist
    */
-  async sendOTP(email: string, ipAddress: string = '0.0.0.0'): Promise<{ message: string }> {
+  async sendOTP(
+    email: string,
+    ipAddress: string = '0.0.0.0',
+  ): Promise<{ message: string }> {
     if (!email || !email.trim()) {
       throw new BadRequestException("L'email est requis");
     }
@@ -115,7 +123,13 @@ export class AuthService {
 
     // Send OTP via email (includes IP + timestamp for context)
     try {
-      await this.emailService.sendOTP(user.email, user.name, otp, ipAddress, new Date());
+      await this.emailService.sendOTP(
+        user.email,
+        user.name,
+        otp,
+        ipAddress,
+        new Date(),
+      );
     } catch (error) {
       console.error('Failed to send OTP email:', error);
       throw new Error("Échec de l'envoi de l'OTP par email");
@@ -135,12 +149,16 @@ export class AuthService {
     }
 
     if (!user.otp || !user.otpExpiry) {
-      throw new UnauthorizedException("Aucun OTP trouvé. Veuillez demander un nouveau code.");
+      throw new UnauthorizedException(
+        'Aucun OTP trouvé. Veuillez demander un nouveau code.',
+      );
     }
 
     // Check if OTP has expired
     if (new Date() > user.otpExpiry) {
-      throw new UnauthorizedException("Le code OTP a expiré. Veuillez demander un nouveau code.");
+      throw new UnauthorizedException(
+        'Le code OTP a expiré. Veuillez demander un nouveau code.',
+      );
     }
 
     // Verify OTP

@@ -1,4 +1,12 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+  HasMany,
+} from 'sequelize-typescript';
 import { Section } from './section.model';
 import { TestYear } from './test-year.model';
 
@@ -7,6 +15,8 @@ interface SubjectCreationAttributes {
   description?: string | null;
   section_id: string;
   branch_type: string;
+  year_count?: number;
+  question_count?: number;
 }
 
 @Table({
@@ -52,6 +62,20 @@ export class Subject extends Model<Subject, SubjectCreationAttributes> {
 
   @HasMany(() => TestYear)
   declare testYears: TestYear[];
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  declare year_count: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  declare question_count: number;
 
   declare createdAt: Date;
   declare updatedAt: Date;

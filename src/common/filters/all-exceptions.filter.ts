@@ -28,8 +28,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const message =
       typeof exceptionResponse === 'string'
         ? exceptionResponse
-        : (exceptionResponse as { message?: string | string[] } | null)?.message ??
-          (exception instanceof Error ? exception.message : 'Internal server error');
+        : ((exceptionResponse as { message?: string | string[] } | null)
+            ?.message ??
+          (exception instanceof Error
+            ? exception.message
+            : 'Internal server error'));
 
     this.logger.error(
       `${request.method} ${request.url} -> ${status}`,

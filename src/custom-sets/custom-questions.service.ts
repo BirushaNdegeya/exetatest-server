@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CustomQuestion } from '../models/custom-question.model';
 import { CustomQuestionSet } from '../models/custom-question-set.model';
@@ -39,7 +43,9 @@ export class CustomQuestionsService {
     // Verify user owns the set
     const set = await this.customSetModel.findByPk(setId);
     if (!set || set.creator_id !== userId) {
-      throw new ForbiddenException("Vous ne pouvez ajouter des questions qu'à vos propres ensembles");
+      throw new ForbiddenException(
+        "Vous ne pouvez ajouter des questions qu'à vos propres ensembles",
+      );
     }
 
     return this.customQuestionModel.create({
@@ -65,28 +71,40 @@ export class CustomQuestionsService {
     // Verify user owns the set
     const set = await this.customSetModel.findByPk(setId);
     if (!set || set.creator_id !== userId) {
-      throw new ForbiddenException("Vous ne pouvez modifier des questions que dans vos propres ensembles");
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier des questions que dans vos propres ensembles',
+      );
     }
 
     const question = await this.getCustomQuestionById(id);
     if (question.set_id !== setId) {
-      throw new ForbiddenException("Cette question n'appartient pas à cet ensemble");
+      throw new ForbiddenException(
+        "Cette question n'appartient pas à cet ensemble",
+      );
     }
 
     await question.update(data);
     return question;
   }
 
-  async deleteCustomQuestion(userId: string, setId: string, id: string): Promise<void> {
+  async deleteCustomQuestion(
+    userId: string,
+    setId: string,
+    id: string,
+  ): Promise<void> {
     // Verify user owns the set
     const set = await this.customSetModel.findByPk(setId);
     if (!set || set.creator_id !== userId) {
-      throw new ForbiddenException("Vous ne pouvez supprimer des questions que de vos propres ensembles");
+      throw new ForbiddenException(
+        'Vous ne pouvez supprimer des questions que de vos propres ensembles',
+      );
     }
 
     const question = await this.getCustomQuestionById(id);
     if (question.set_id !== setId) {
-      throw new ForbiddenException("Cette question n'appartient pas à cet ensemble");
+      throw new ForbiddenException(
+        "Cette question n'appartient pas à cet ensemble",
+      );
     }
 
     await question.destroy();

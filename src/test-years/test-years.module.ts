@@ -9,7 +9,9 @@ import { TestYearsController } from './test-years.controller';
 import { TestYearsService } from './test-years.service';
 
 @Module({
-  imports: [SequelizeModule.forFeature([TestYear, Subject, Question, UserRole, User])],
+  imports: [
+    SequelizeModule.forFeature([TestYear, Subject, Question, UserRole, User]),
+  ],
   providers: [TestYearsService],
   controllers: [TestYearsController],
   exports: [TestYearsService],

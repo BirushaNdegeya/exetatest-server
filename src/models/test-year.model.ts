@@ -1,10 +1,19 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+  HasMany,
+} from 'sequelize-typescript';
 import { Subject } from './subject.model';
 import { Question } from './question.model';
 
 interface TestYearCreationAttributes {
   year: number;
   subject_id: string;
+  question_count?: number;
 }
 
 @Table({
@@ -44,6 +53,13 @@ export class TestYear extends Model<TestYear, TestYearCreationAttributes> {
 
   @HasMany(() => Question)
   declare questions: Question[];
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  declare question_count: number;
 
   declare createdAt: Date;
   declare updatedAt: Date;

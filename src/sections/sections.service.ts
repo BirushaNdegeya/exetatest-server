@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Section } from '../models/section.model';
 
@@ -12,8 +16,14 @@ export class SectionsService {
   /**
    * Validates a section UUID for profile PATCH. Returns null to clear. Throws if id is not found.
    */
-  async resolveSectionIdForProfile(raw: string | null | undefined): Promise<string | null> {
-    if (raw === null || raw === undefined || (typeof raw === 'string' && !raw.trim())) {
+  async resolveSectionIdForProfile(
+    raw: string | null | undefined,
+  ): Promise<string | null> {
+    if (
+      raw === null ||
+      raw === undefined ||
+      (typeof raw === 'string' && !raw.trim())
+    ) {
       return null;
     }
     const id = String(raw).trim();

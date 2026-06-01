@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { SharedQuizService } from './shared-quiz.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -14,10 +9,7 @@ export class SharedQuizController {
 
   @Get(':setId')
   @UseGuards(JwtAuthGuard)
-  async getSharedQuiz(
-    @CurrentUser() user: any,
-    @Param('setId') setId: string,
-  ) {
+  async getSharedQuiz(@CurrentUser() user: any, @Param('setId') setId: string) {
     return this.sharedQuizService.getSharedQuiz(user.id, setId);
   }
 }

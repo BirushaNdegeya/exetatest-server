@@ -1,4 +1,12 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+  HasMany,
+} from 'sequelize-typescript';
 import { TestYear } from './test-year.model';
 import { Subject } from './subject.model';
 import { UserProgress } from './user-progress.model';

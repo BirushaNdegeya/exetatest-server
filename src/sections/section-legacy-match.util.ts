@@ -36,7 +36,9 @@ export function findSectionMatchingLegacyLabel(
   }
 
   const compactLegacy = compactKey(legacy);
-  const compactHits = sections.filter((s) => compactKey(s.name) === compactLegacy);
+  const compactHits = sections.filter(
+    (s) => compactKey(s.name) === compactLegacy,
+  );
   if (compactHits.length === 1) {
     return compactHits[0];
   }

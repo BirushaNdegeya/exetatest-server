@@ -60,9 +60,16 @@ export class PracticeService {
 
     let profileOut: ProfileResponseDto = profile;
     if (!profile.section_id && profile.section?.trim()) {
-      const legacyMatch = findSectionMatchingLegacyLabel(profile.section, sectionEntities);
+      const legacyMatch = findSectionMatchingLegacyLabel(
+        profile.section,
+        sectionEntities,
+      );
       if (legacyMatch) {
-        await this.profilesService.persistMatchedLegacySection(userId, legacyMatch.id, legacyMatch.name);
+        await this.profilesService.persistMatchedLegacySection(
+          userId,
+          legacyMatch.id,
+          legacyMatch.name,
+        );
         profileOut = {
           ...profile,
           section_id: legacyMatch.id,
@@ -72,7 +79,7 @@ export class PracticeService {
     }
 
     const matchingSection = profileOut.section_id
-      ? sectionEntities.find((s) => s.id === profileOut.section_id) ?? null
+      ? (sectionEntities.find((s) => s.id === profileOut.section_id) ?? null)
       : null;
 
     const streak = {
@@ -91,7 +98,9 @@ export class PracticeService {
       };
     }
 
-    const sectionSubjects = await this.subjectsService.getAllSubjects(matchingSection.id);
+    const sectionSubjects = await this.subjectsService.getAllSubjects(
+      matchingSection.id,
+    );
 
     const subjects: PracticeSubjectRow[] = await Promise.all(
       sectionSubjects.map(async (sub) => {

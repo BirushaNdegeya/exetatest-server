@@ -8,7 +8,14 @@ import { Invitation } from '../models/invitation.model';
 import { User } from '../models/user.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([CustomQuestionSet, CustomQuestion, Invitation, User])],
+  imports: [
+    SequelizeModule.forFeature([
+      CustomQuestionSet,
+      CustomQuestion,
+      Invitation,
+      User,
+    ]),
+  ],
   providers: [SharedQuizService],
   controllers: [SharedQuizController],
   exports: [SharedQuizService],

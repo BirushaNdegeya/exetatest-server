@@ -20,7 +20,9 @@ export class TestYearsService {
     private readonly questionModel: typeof Question,
   ) {}
 
-  async getYearsBySubject(subjectId: string): Promise<Array<TestYear & { question_count?: number }>> {
+  async getYearsBySubject(
+    subjectId: string,
+  ): Promise<Array<TestYear & { question_count?: number }>> {
     await this.ensureSubjectExists(subjectId);
 
     const years = await this.testYearModel.findAll({
@@ -30,14 +32,11 @@ export class TestYearsService {
     });
 
     return years.map((year) => {
-      const jsonYear = year.toJSON() as TestYear & { questions?: Question[]; question_count?: number };
-      jsonYear.question_count = jsonYear.questions?.length ?? 0;
-      const { questions, ...yearWithoutQuestions } = jsonYear as TestYear & {
-        questions?: Question[];
-        question_count?: number;
-      };
-      void questions;
-      return yearWithoutQuestions as TestYear & { question_count?: number };
+      const question_count = year.questions?.length ?? 0;
+      return {
+        ...year.toJSON(),
+        question_count,
+      } as TestYear & { question_count?: number };
     });
   }
 
@@ -94,7 +93,11 @@ export class TestYearsService {
     }
   }
 
-  private async ensureUniqueYear(subjectId: string, year: number, excludeId?: string): Promise<void> {
+  private async ensureUniqueYear(
+    subjectId: string,
+    year: number,
+    excludeId?: string,
+  ): Promise<void> {
     const duplicate = await this.testYearModel.findOne({
       where: {
         subject_id: subjectId,
@@ -109,7 +112,9 @@ export class TestYearsService {
 
   private validateYear(year: number): void {
     if (!Number.isInteger(year) || year < 1900 || year > 3000) {
-      throw new BadRequestException('L\'année doit être un entier compris entre 1900 et 3000');
+      throw new BadRequestException(
+        "L'année doit être un entier compris entre 1900 et 3000",
+      );
     }
   }
 }

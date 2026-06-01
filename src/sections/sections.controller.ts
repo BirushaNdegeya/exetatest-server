@@ -31,7 +31,8 @@ export class SectionsController {
   @Get()
   @ApiOperation({
     summary: 'List sections',
-    description: 'Returns the top level of the hierarchy. Each section contains subjects, each subject contains test-year blocks, and each test-year block contains questions.',
+    description:
+      'Returns the top level of the hierarchy. Each section contains subjects, each subject contains test-year blocks, and each test-year block contains questions.',
   })
   @ApiResponse({
     status: 200,
@@ -78,7 +79,8 @@ export class SectionsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a section',
-    description: 'Creates a top-level section that can later contain multiple subjects.',
+    description:
+      'Creates a top-level section that can later contain multiple subjects.',
   })
   @ApiBody({ type: CreateSectionDto })
   @ApiResponse({
@@ -106,7 +108,8 @@ export class SectionsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a section',
-    description: 'Updates the name of a top-level section that groups subjects.',
+    description:
+      'Updates the name of a top-level section that groups subjects.',
   })
   @ApiParam({
     name: 'id',
@@ -143,7 +146,8 @@ export class SectionsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a section',
-    description: 'Deletes a top-level section. Any dependent subject hierarchy rules are handled by the service layer and database constraints.',
+    description:
+      'Deletes a top-level section. Any dependent subject hierarchy rules are handled by the service layer and database constraints.',
   })
   @ApiParam({
     name: 'id',

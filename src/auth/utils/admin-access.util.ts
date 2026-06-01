@@ -17,7 +17,10 @@ export function getConfiguredAdminEmails(adminEmailsConfig?: string): string[] {
   return DEFAULT_ADMIN_EMAILS;
 }
 
-export function isConfiguredAdminEmail(email?: string | null, adminEmailsConfig?: string): boolean {
+export function isConfiguredAdminEmail(
+  email?: string | null,
+  adminEmailsConfig?: string,
+): boolean {
   const normalizedEmail = normalizeEmail(email);
 
   if (!normalizedEmail) {

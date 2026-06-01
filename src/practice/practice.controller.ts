@@ -27,9 +27,17 @@ export class PracticeController {
     description: 'Aggregated practice data',
     schema: {
       example: {
-        profile: { id: '…', email: 'student@example.com', section: 'MECANIQUE GENERALE' },
+        profile: {
+          id: '…',
+          email: 'student@example.com',
+          section: 'MECANIQUE GENERALE',
+        },
         sections: [{ id: '…', name: 'MECANIQUE GENERALE' }],
-        streak: { current_streak: 3, longest_streak: 10, last_activity_date: '2026-04-03' },
+        streak: {
+          current_streak: 3,
+          longest_streak: 10,
+          last_activity_date: '2026-04-03',
+        },
         selected_section_id: '…',
         subjects: [
           {

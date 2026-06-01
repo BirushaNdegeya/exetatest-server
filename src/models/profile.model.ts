@@ -1,18 +1,19 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { User } from './user.model';
 import { Section } from './section.model';
 
 interface ProfileCreationAttributes {
   userId: string;
-  display_name?: string | null;
-  prenom?: string | null;
-  postnom?: string | null;
-  nom?: string | null;
-  matricule?: string | null;
   /** @deprecated Kept for legacy rows; prefer section_id */
   section?: string | null;
   section_id?: string | null;
-  avatar_url?: string | null;
 }
 
 @Table({
@@ -38,36 +39,6 @@ export class Profile extends Model<Profile, ProfileCreationAttributes> {
   @BelongsTo(() => User)
   user: User;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  display_name: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  prenom: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  postnom: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  nom: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  matricule: string | null;
-
   /** Legacy display copy; canonical link is section_id */
   @Column({
     type: DataType.STRING,
@@ -84,12 +55,6 @@ export class Profile extends Model<Profile, ProfileCreationAttributes> {
 
   @BelongsTo(() => Section)
   sectionEntity: Section;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  avatar_url: string | null;
 
   @Column({
     type: DataType.INTEGER,

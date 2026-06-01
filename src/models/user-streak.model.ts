@@ -1,4 +1,11 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { User } from './user.model';
 
 interface UserStreakCreationAttributes {
@@ -12,7 +19,10 @@ interface UserStreakCreationAttributes {
   tableName: 'user_streaks',
   timestamps: true,
 })
-export class UserStreak extends Model<UserStreak, UserStreakCreationAttributes> {
+export class UserStreak extends Model<
+  UserStreak,
+  UserStreakCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

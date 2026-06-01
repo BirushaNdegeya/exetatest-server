@@ -8,7 +8,13 @@ import { SubjectsModule } from '../subjects/subjects.module';
 import { TestYearsModule } from '../test-years/test-years.module';
 
 @Module({
-  imports: [ProfilesModule, SectionsModule, StreaksModule, SubjectsModule, TestYearsModule],
+  imports: [
+    ProfilesModule,
+    SectionsModule,
+    StreaksModule,
+    SubjectsModule,
+    TestYearsModule,
+  ],
   controllers: [PracticeController],
   providers: [PracticeService],
   exports: [PracticeService],

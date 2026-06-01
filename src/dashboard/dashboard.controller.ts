@@ -27,8 +27,6 @@ export class DashboardController {
     description: 'Aggregated dashboard data',
     schema: {
       example: {
-        display_name: 'Grace',
-        profile_complete: true,
         xp: 120,
         current_streak: 4,
         longest_streak: 9,

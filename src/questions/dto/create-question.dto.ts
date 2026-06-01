@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsNotEmptyObject, IsNumber, IsString, Min, Max, IsOptional, IsNotEmpty } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmptyObject,
+  IsNumber,
+  IsString,
+  Min,
+  Max,
+  IsOptional,
+  IsNotEmpty,
+} from 'class-validator';
 
 export const QUESTION_TYPES = [
   'standard',
@@ -14,7 +23,8 @@ export const QUESTION_LANGUAGES = ['francais', 'anglais'] as const;
 export class CreateQuestionDto {
   @ApiProperty({
     description: 'Question text shown to the learner',
-    example: 'What is the capital city of the Democratic Republic of the Congo?',
+    example:
+      'What is the capital city of the Democratic Republic of the Congo?',
   })
   @IsString()
   @IsNotEmpty()
@@ -27,7 +37,7 @@ export class CreateQuestionDto {
       option2: 'Lubumbashi (2)',
       option3: 'Goma (3)',
       option4: 'Matadi (4)',
-      option5: 'Bukavu (5)'
+      option5: 'Bukavu (5)',
     },
   })
   @IsNotEmptyObject()
@@ -43,7 +53,7 @@ export class CreateQuestionDto {
     description: 'Correct answer position (1-5)',
     example: 1,
     minimum: 1,
-    maximum: 5
+    maximum: 5,
   })
   @IsNumber()
   @Min(1)
@@ -76,7 +86,8 @@ export class CreateQuestionDto {
   passage?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Optional shared passage-group identifier used to tie multiple language questions to the same text.',
+    description:
+      'Optional shared passage-group identifier used to tie multiple language questions to the same text.',
     example: 'lang-fr-2026-passage-1',
     nullable: true,
   })
@@ -85,7 +96,8 @@ export class CreateQuestionDto {
   passage_group?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Question presentation type used by the admin dashboard for math, language, oral, or dissertation workflows.',
+    description:
+      'Question presentation type used by the admin dashboard for math, language, oral, or dissertation workflows.',
     enum: QUESTION_TYPES,
     example: 'math_equation',
     default: 'standard',
@@ -96,7 +108,8 @@ export class CreateQuestionDto {
   question_type?: (typeof QUESTION_TYPES)[number];
 
   @ApiPropertyOptional({
-    description: 'Optional language tag, mainly for language and oral question branches.',
+    description:
+      'Optional language tag, mainly for language and oral question branches.',
     enum: QUESTION_LANGUAGES,
     nullable: true,
     example: 'francais',

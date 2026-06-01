@@ -35,7 +35,8 @@ export class QuestionsController {
   @Get('questions')
   @ApiOperation({
     summary: 'List questions',
-    description: 'Returns questions with optional filtering by subject, year block, exam year, and text search.',
+    description:
+      'Returns questions with optional filtering by subject, year block, exam year, and text search.',
   })
   @ApiQuery({
     name: 'subject_id',
@@ -114,13 +115,21 @@ export class QuestionsController {
     @Query('page') page: number = 1,
     @Query('search') search?: string,
   ) {
-    return this.questionsService.getAllQuestions(subjectId, year, testYearId, Number(limit), Number(page), search);
+    return this.questionsService.getAllQuestions(
+      subjectId,
+      year,
+      testYearId,
+      Number(limit),
+      Number(page),
+      search,
+    );
   }
 
   @Get('questions/random')
   @ApiOperation({
     summary: 'Get random questions',
-    description: 'Returns a shuffled question subset, optionally filtered by subject or year.',
+    description:
+      'Returns a shuffled question subset, optionally filtered by subject or year.',
   })
   @ApiQuery({
     name: 'subject_id',
@@ -151,13 +160,18 @@ export class QuestionsController {
     @Query('year') year?: number,
     @Query('limit') limit: number = 7,
   ) {
-    return this.questionsService.getRandomQuestions(subjectId, year, Number(limit));
+    return this.questionsService.getRandomQuestions(
+      subjectId,
+      year,
+      Number(limit),
+    );
   }
 
   @Get('questions/:id')
   @ApiOperation({
     summary: 'Get a question by ID',
-    description: 'Returns one question with its year block and subject context.',
+    description:
+      'Returns one question with its year block and subject context.',
   })
   @ApiParam({
     name: 'id',
@@ -177,7 +191,8 @@ export class QuestionsController {
   @Get('years/:yearId/questions')
   @ApiOperation({
     summary: 'List questions for a year block',
-    description: 'Returns paginated questions that belong to the selected year block.',
+    description:
+      'Returns paginated questions that belong to the selected year block.',
   })
   @ApiParam({
     name: 'yearId',
@@ -242,7 +257,12 @@ export class QuestionsController {
     @Query('limit') limit: number = 20,
     @Query('search') search?: string,
   ) {
-    return this.questionsService.getQuestionsByYear(yearId, Number(page), Number(limit), search);
+    return this.questionsService.getQuestionsByYear(
+      yearId,
+      Number(page),
+      Number(limit),
+      search,
+    );
   }
 
   @Post('years/:yearId/questions')
@@ -263,7 +283,10 @@ export class QuestionsController {
     schema: {
       type: 'object',
       properties: {
-        question_text: { type: 'string', example: 'Quelle est la capitale de la RDC ?' },
+        question_text: {
+          type: 'string',
+          example: 'Quelle est la capitale de la RDC ?',
+        },
         options: {
           type: 'object',
           properties: {
@@ -287,7 +310,13 @@ export class QuestionsController {
         passage_group: { type: 'string', nullable: true, example: null },
         question_type: {
           type: 'string',
-          enum: ['standard', 'math_equation', 'language_passage', 'dissertation', 'oral'],
+          enum: [
+            'standard',
+            'math_equation',
+            'language_passage',
+            'dissertation',
+            'oral',
+          ],
           example: 'standard',
         },
         language: {
@@ -328,7 +357,10 @@ export class QuestionsController {
     @Param('yearId') yearId: string,
     @Body() createQuestionDto: Omit<CreateQuestionDto, 'test_year_id'>,
   ) {
-    return this.questionsService.createQuestionForYear(yearId, createQuestionDto);
+    return this.questionsService.createQuestionForYear(
+      yearId,
+      createQuestionDto,
+    );
   }
 
   @Post('questions/bulk')

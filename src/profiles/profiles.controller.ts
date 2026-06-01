@@ -23,7 +23,8 @@ export class ProfilesController {
   @Get('me')
   @ApiOperation({
     summary: 'Get my profile',
-    description: 'Returns the authenticated user profile. If the profile row does not exist yet, it is created automatically.',
+    description:
+      'Returns the authenticated user profile. If the profile row does not exist yet, it is created automatically.',
   })
   @ApiOkResponse({
     description: 'Profile returned successfully',

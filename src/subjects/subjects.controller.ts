@@ -40,7 +40,8 @@ export class SubjectsController {
   @ApiQuery({
     name: 'section_id',
     required: false,
-    description: 'Optional section ID to return only the subjects that belong to that section',
+    description:
+      'Optional section ID to return only the subjects that belong to that section',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiResponse({
@@ -77,7 +78,8 @@ export class SubjectsController {
   @Get(':id/question-count')
   @ApiOperation({
     summary: 'Get the total number of questions for a subject',
-    description: 'Counts questions across every test-year block that belongs to the subject.',
+    description:
+      'Counts questions across every test-year block that belongs to the subject.',
   })
   @ApiParam({
     name: 'id',
@@ -109,7 +111,8 @@ export class SubjectsController {
   })
   @ApiBody({
     type: CreateSubjectDto,
-    description: 'Provide the subject name, an optional description, and the parent section_id.',
+    description:
+      'Provide the subject name, an optional description, and the parent section_id.',
     examples: {
       createSubject: {
         summary: 'Create Culture Generale under a section',
@@ -148,7 +151,8 @@ export class SubjectsController {
   })
   @ApiBody({
     type: CreateSubjectDto,
-    description: 'Send the updated subject name, optional description, and section_id.',
+    description:
+      'Send the updated subject name, optional description, and section_id.',
     examples: {
       updateSubject: {
         summary: 'Move or rename a subject',
@@ -181,7 +185,8 @@ export class SubjectsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a subject',
-    description: 'Deletes a subject and cleans up every test-year block and question attached to it.',
+    description:
+      'Deletes a subject and cleans up every test-year block and question attached to it.',
   })
   @ApiParam({
     name: 'id',

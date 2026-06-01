@@ -7,23 +7,9 @@ export class ProfileResponseDto {
   @ApiProperty({ format: 'email', example: 'student@example.com' })
   email: string;
 
-  @ApiPropertyOptional({ example: 'Esther', nullable: true })
-  display_name: string | null;
-
-  @ApiPropertyOptional({ example: 'Esther', nullable: true })
-  prenom: string | null;
-
-  @ApiPropertyOptional({ example: 'Kasongo', nullable: true })
-  postnom: string | null;
-
-  @ApiPropertyOptional({ example: 'Mwamba', nullable: true })
-  nom: string | null;
-
-  @ApiPropertyOptional({ example: '2024/KINSHASA/001', nullable: true })
-  matricule: string | null;
-
   @ApiPropertyOptional({
-    description: 'Resolved section label (convenience); canonical key is section_id',
+    description:
+      'Resolved section label (convenience); canonical key is section_id',
     example: 'MECANIQUE GENERALE',
     nullable: true,
   })
@@ -35,9 +21,6 @@ export class ProfileResponseDto {
     nullable: true,
   })
   section_id: string | null;
-
-  @ApiPropertyOptional({ example: 'https://cdn.example.com/avatar.png', nullable: true })
-  avatar_url: string | null;
 
   @ApiProperty({ example: 0 })
   xp: number;

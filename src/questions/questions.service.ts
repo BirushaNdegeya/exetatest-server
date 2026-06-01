@@ -143,7 +143,14 @@ export class QuestionsService {
     meta: { total: number; page: number; limit: number };
   }> {
     await this.ensureYearExists(yearId);
-    return this.getAllQuestions(undefined, undefined, yearId, limit, page, search);
+    return this.getAllQuestions(
+      undefined,
+      undefined,
+      yearId,
+      limit,
+      page,
+      search,
+    );
   }
 
   async createQuestion(data: CreateQuestionPayload): Promise<Question> {

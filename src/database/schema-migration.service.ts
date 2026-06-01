@@ -28,9 +28,14 @@ export class SchemaMigrationService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const runStartupMigrations = this.getBooleanEnv('RUN_STARTUP_MIGRATIONS', true);
+    const runStartupMigrations = this.getBooleanEnv(
+      'RUN_STARTUP_MIGRATIONS',
+      true,
+    );
     if (!runStartupMigrations) {
-      this.logger.log('Skipping startup schema migrations because RUN_STARTUP_MIGRATIONS=false');
+      this.logger.log(
+        'Skipping startup schema migrations because RUN_STARTUP_MIGRATIONS=false',
+      );
       return;
     }
 
@@ -42,9 +47,14 @@ export class SchemaMigrationService implements OnModuleInit {
     await this.ensureQuestionTestYearColumn();
     await this.ensureQuestionMetadataColumns();
 
-    const runStartupBackfills = this.getBooleanEnv('RUN_STARTUP_BACKFILLS', false);
+    const runStartupBackfills = this.getBooleanEnv(
+      'RUN_STARTUP_BACKFILLS',
+      false,
+    );
     if (!runStartupBackfills) {
-      this.logger.log('Skipping startup data backfills; set RUN_STARTUP_BACKFILLS=true to enable them');
+      this.logger.log(
+        'Skipping startup data backfills; set RUN_STARTUP_BACKFILLS=true to enable them',
+      );
       return;
     }
 
@@ -71,7 +81,9 @@ export class SchemaMigrationService implements OnModuleInit {
     try {
       profileTable = await queryInterface.describeTable('profiles');
     } catch {
-      this.logger.warn('profiles table not found yet; skip section_id migration');
+      this.logger.warn(
+        'profiles table not found yet; skip section_id migration',
+      );
       return;
     }
 
@@ -100,7 +112,10 @@ export class SchemaMigrationService implements OnModuleInit {
         return;
       }
 
-      const profiles = await this.sequelize.query<{ id: string; section: string }>(
+      const profiles = await this.sequelize.query<{
+        id: string;
+        section: string;
+      }>(
         `SELECT id, section FROM profiles WHERE section_id IS NULL AND section IS NOT NULL AND TRIM(section) <> ''`,
         { type: QueryTypes.SELECT },
       );
@@ -117,10 +132,14 @@ export class SchemaMigrationService implements OnModuleInit {
         }
       }
       if (updated > 0) {
-        this.logger.log(`Backfilled section_id on ${updated} profile row(s) from legacy section text`);
+        this.logger.log(
+          `Backfilled section_id on ${updated} profile row(s) from legacy section text`,
+        );
       }
     } catch (e) {
-      this.logger.warn(`backfillProfilesLegacySectionTextToIds skipped: ${e instanceof Error ? e.message : String(e)}`);
+      this.logger.warn(
+        `backfillProfilesLegacySectionTextToIds skipped: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -195,7 +214,11 @@ export class SchemaMigrationService implements OnModuleInit {
     const queryInterface = this.sequelize.getQueryInterface();
     const questionTable = await queryInterface.describeTable('questions');
 
-    if (!questionTable.subject_id || !questionTable.year || !questionTable.test_year_id) {
+    if (
+      !questionTable.subject_id ||
+      !questionTable.year ||
+      !questionTable.test_year_id
+    ) {
       return;
     }
 
@@ -240,7 +263,9 @@ export class SchemaMigrationService implements OnModuleInit {
     }
 
     if (legacyQuestions.length > 0) {
-      this.logger.log(`Backfilled ${legacyQuestions.length} legacy questions into test_year blocks`);
+      this.logger.log(
+        `Backfilled ${legacyQuestions.length} legacy questions into test_year blocks`,
+      );
     }
   }
 }

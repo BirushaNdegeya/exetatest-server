@@ -8,7 +8,10 @@ import { Section } from '../models/section.model';
 import { SectionsModule } from '../sections/sections.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Profile, User, Section]), SectionsModule],
+  imports: [
+    SequelizeModule.forFeature([Profile, User, Section]),
+    SectionsModule,
+  ],
   providers: [ProfilesService],
   controllers: [ProfilesController],
   exports: [ProfilesService],

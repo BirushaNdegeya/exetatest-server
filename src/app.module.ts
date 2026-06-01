@@ -57,7 +57,8 @@ import { Invitation } from './models/invitation.model';
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        const isProduction =
+          configService.get<string>('NODE_ENV') === 'production';
         const synchronize = configService.get<string>('DB_SYNCHRONIZE');
         const shouldSynchronize = synchronize
           ? synchronize === 'true'
@@ -78,7 +79,10 @@ import { Invitation } from './models/invitation.model';
           },
           autoLoadModels: true,
           synchronize: shouldSynchronize,
-          logging: configService.get<string>('NODE_ENV') === 'development' ? console.log : false,
+          logging:
+            configService.get<string>('NODE_ENV') === 'development'
+              ? console.log
+              : false,
         };
       },
       inject: [ConfigService],
@@ -127,4 +131,4 @@ import { Invitation } from './models/invitation.model';
     SchemaMigrationService,
   ],
 })
-export class AppModule { }
+export class AppModule {}

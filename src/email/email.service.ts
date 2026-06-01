@@ -26,7 +26,10 @@ export class EmailService {
     timestamp: Date,
   ): Promise<void> {
     const appName = this.configService.get<string>('APP_NAME', 'EXETAT Test');
-    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const appUrl = this.configService.get<string>(
+      'APP_URL',
+      'http://localhost:3000',
+    );
 
     const htmlContent = this.getLoginNotificationTemplate(
       name,
@@ -40,7 +43,7 @@ export class EmailService {
     await this.transporter.sendMail({
       from: `"${appName}" <${this.configService.get<string>('SMTP_FROM')}>`,
       to: email,
-      subject: "Connexion détectée : nouvel appareil ou nouvel emplacement ?",
+      subject: 'Connexion détectée : nouvel appareil ou nouvel emplacement ?',
       html: htmlContent,
     });
   }
@@ -53,7 +56,10 @@ export class EmailService {
     timestamp: Date,
   ): Promise<void> {
     const appName = this.configService.get<string>('APP_NAME', 'EXETAT Test');
-    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const appUrl = this.configService.get<string>(
+      'APP_URL',
+      'http://localhost:3000',
+    );
 
     const htmlContent = this.getOTPTemplate(
       name,
@@ -262,7 +268,8 @@ export class EmailService {
     timestamp: Date,
     appUrl: string,
   ): string {
-    const formattedDate = timestamp.toISOString().replace('T', ' ').substring(0, 19) + '(UTC)';
+    const formattedDate =
+      timestamp.toISOString().replace('T', ' ').substring(0, 19) + '(UTC)';
 
     return `
 <!DOCTYPE html>
@@ -444,8 +451,14 @@ export class EmailService {
     inviterName: string,
     setTitle: string,
   ): Promise<void> {
-    const appName = this.configService.get<string>('APP_NAME', 'EXETAT Mastery');
-    const appUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
+    const appName = this.configService.get<string>(
+      'APP_NAME',
+      'EXETAT Mastery',
+    );
+    const appUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:5173',
+    );
 
     const htmlContent = this.getSetInvitationTemplate(
       inviterName,

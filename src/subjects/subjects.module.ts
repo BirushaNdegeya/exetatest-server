@@ -9,7 +9,9 @@ import { UserRole } from '../models/user-role.model';
 import { User } from '../models/user.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Subject, Section, TestYear, UserRole, User])],
+  imports: [
+    SequelizeModule.forFeature([Subject, Section, TestYear, UserRole, User]),
+  ],
   providers: [SubjectsService],
   controllers: [SubjectsController],
   exports: [SubjectsService],

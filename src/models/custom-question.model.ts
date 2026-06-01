@@ -1,4 +1,11 @@
-import { Column, DataType, Model, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { CustomQuestionSet } from './custom-question-set.model';
 
 interface CustomQuestionCreationAttributes {
@@ -13,7 +20,10 @@ interface CustomQuestionCreationAttributes {
   tableName: 'custom_questions',
   timestamps: true,
 })
-export class CustomQuestion extends Model<CustomQuestion, CustomQuestionCreationAttributes> {
+export class CustomQuestion extends Model<
+  CustomQuestion,
+  CustomQuestionCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,

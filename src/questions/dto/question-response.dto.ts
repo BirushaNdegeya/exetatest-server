@@ -19,7 +19,7 @@ export class QuestionResponseDto {
       option2: 'Lubumbashi (2)',
       option3: 'Goma (3)',
       option4: 'Matadi (4)',
-      option5: 'Bukavu (5)'
+      option5: 'Bukavu (5)',
     },
   })
   options: {
@@ -37,7 +37,8 @@ export class QuestionResponseDto {
   correctAnswer: number;
 
   @ApiProperty({
-    example: 'Kinshasa (1) est la capitale de la Republique Democratique du Congo.',
+    example:
+      'Kinshasa (1) est la capitale de la Republique Democratique du Congo.',
   })
   explanation: string;
 

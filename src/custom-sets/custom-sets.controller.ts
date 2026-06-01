@@ -50,7 +50,11 @@ export class CustomSetsController {
     @Param('id') id: string,
     @Body() updateCustomSetDto: CreateCustomSetDto,
   ) {
-    return this.customSetsService.updateCustomSet(user.id, id, updateCustomSetDto);
+    return this.customSetsService.updateCustomSet(
+      user.id,
+      id,
+      updateCustomSetDto,
+    );
   }
 
   @Delete('custom-sets/:id')
