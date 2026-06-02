@@ -27,11 +27,8 @@ export class DashboardController {
     description: 'Aggregated dashboard data',
     schema: {
       example: {
-        xp: 120,
         current_streak: 4,
         longest_streak: 9,
-        total_answered: 87,
-        correct_answers: 63,
         custom_set_count: 5,
       },
     },

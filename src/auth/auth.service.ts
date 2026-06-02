@@ -17,6 +17,7 @@ import { EmailService } from '../email/email.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { createHash, randomBytes } from 'crypto';
 import { Op } from 'sequelize';
+import { StreaksService } from '../streaks/streaks.service';
 
 type UserAuthState = {
   id: string;
@@ -26,6 +27,9 @@ type UserAuthState = {
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: Date | null;
 };
 
 @Injectable()
@@ -47,6 +51,7 @@ export class AuthService {
     private jwtService: JwtService,
     private emailService: EmailService,
     private cloudinaryService: CloudinaryService,
+    private streaksService: StreaksService,
   ) {}
 
   async validateUser(email: string): Promise<User | null> {
@@ -92,9 +97,12 @@ export class AuthService {
   }
 
   private async getUserAuthState(user: User): Promise<UserAuthState> {
-    const profile = await this.profileModel.findOne({
-      where: { userId: user.id },
-    });
+    const [profile, streak] = await Promise.all([
+      this.profileModel.findOne({
+        where: { userId: user.id },
+      }),
+      this.streaksService.updateStreak(user.id),
+    ]);
 
     const hasSelectedSections = Boolean(profile?.section_id);
 
@@ -106,6 +114,9 @@ export class AuthService {
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: profile?.section_id ?? null,
+      current_streak: streak.current_streak ?? 0,
+      longest_streak: streak.longest_streak ?? 0,
+      last_activity_date: streak.last_activity_date ?? null,
     };
   }
 

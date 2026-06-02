@@ -51,12 +51,6 @@ export class Profile extends Model<Profile, ProfileCreationAttributes> {
   })
   section_id: string | null;
 
-  @Column({
-    type: DataType.INTEGER,
-    defaultValue: 0,
-  })
-  xp: number;
-
   declare createdAt: Date;
   declare updatedAt: Date;
 }

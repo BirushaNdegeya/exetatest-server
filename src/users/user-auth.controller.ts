@@ -20,7 +20,8 @@ export class UserAuthController {
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get my auth profile (hasSelectedSections + isFirstLogin)',
+    summary:
+      'Get my auth profile (sections + first login + streak summary)',
   })
   @ApiResponse({ status: 200, description: 'Profile returned successfully' })
   async getProfile(@CurrentUser() user: { id: string }) {

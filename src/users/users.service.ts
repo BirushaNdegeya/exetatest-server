@@ -5,6 +5,7 @@ import { UserRole, UserRoleEnum } from '../models/user-role.model';
 import { User } from '../models/user.model';
 import { isConfiguredAdminEmail } from '../auth/utils/admin-access.util';
 import { ProfilesService } from '../profiles/profiles.service';
+import { StreaksService } from '../streaks/streaks.service';
 
 type UserAuthState = {
   id: string;
@@ -14,6 +15,9 @@ type UserAuthState = {
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: Date | null;
 };
 
 @Injectable()
@@ -25,6 +29,7 @@ export class UsersService {
     @InjectModel(User)
     private userModel: typeof User,
     private readonly profilesService: ProfilesService,
+    private readonly streaksService: StreaksService,
   ) {}
 
   async getUserRoles(userId: string): Promise<UserRole[]> {
@@ -65,7 +70,11 @@ export class UsersService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    const profile = await this.profilesService.getProfileByUserId(userId);
+    const [profile, streak] = await Promise.all([
+      this.profilesService.getProfileByUserId(userId),
+      this.streaksService.updateStreak(userId),
+    ]);
+
     const hasSelectedSections = Boolean(profile.section_id);
 
     return {
@@ -76,6 +85,9 @@ export class UsersService {
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: profile.section_id ?? null,
+      current_streak: streak.current_streak ?? 0,
+      longest_streak: streak.longest_streak ?? 0,
+      last_activity_date: streak.last_activity_date ?? null,
     };
   }
 
@@ -88,9 +100,12 @@ export class UsersService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    const updatedProfile = await this.profilesService.updateProfile(userId, {
-      section_id: sectionId,
-    });
+    const [updatedProfile, streak] = await Promise.all([
+      this.profilesService.updateProfile(userId, {
+        section_id: sectionId,
+      }),
+      this.streaksService.updateStreak(userId),
+    ]);
 
     const hasSelectedSections = Boolean(updatedProfile.section_id);
 
@@ -102,6 +117,9 @@ export class UsersService {
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: updatedProfile.section_id ?? null,
+      current_streak: streak.current_streak ?? 0,
+      longest_streak: streak.longest_streak ?? 0,
+      last_activity_date: streak.last_activity_date ?? null,
     };
   }
 }

@@ -47,6 +47,7 @@ export class SchemaMigrationService implements OnModuleInit {
 
     await this.migrateSectionsTableToStaticCatalog();
     await this.ensureProfileSectionIdColumn();
+    await this.ensureUserStreakInactivityEmailColumn();
     await this.testYearModel.sync();
     await this.questionModel.sync();
     await this.removeSubjectIconColumn();
@@ -216,6 +217,37 @@ export class SchemaMigrationService implements OnModuleInit {
       allowNull: true,
     });
     this.logger.log('Added profiles.section_id column (DRC catalog slug)');
+  }
+
+  /**
+   * Ensures `user_streaks.last_inactivity_email_sent_at` exists to prevent
+   * duplicate inactivity reminders.
+   */
+  private async ensureUserStreakInactivityEmailColumn(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let streakTable: Record<string, unknown>;
+    try {
+      streakTable = await queryInterface.describeTable('user_streaks');
+    } catch {
+      this.logger.warn(
+        'user_streaks table not found yet; skip inactivity email column migration',
+      );
+      return;
+    }
+
+    if (streakTable.last_inactivity_email_sent_at) {
+      return;
+    }
+
+    await queryInterface.addColumn(
+      'user_streaks',
+      'last_inactivity_email_sent_at',
+      {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+    );
+    this.logger.log('Added user_streaks.last_inactivity_email_sent_at column');
   }
 
   /** Links profiles.section_id from legacy profiles.section when labels match the catalog. */

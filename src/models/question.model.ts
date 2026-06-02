@@ -5,11 +5,9 @@ import {
   Table,
   ForeignKey,
   BelongsTo,
-  HasMany,
 } from 'sequelize-typescript';
 import { TestYear } from './test-year.model';
 import { Subject } from './subject.model';
-import { UserProgress } from './user-progress.model';
 
 interface QuestionCreationAttributes {
   question_text: string;
@@ -121,9 +119,6 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
     allowNull: true,
   })
   declare language: string | null;
-
-  @HasMany(() => UserProgress)
-  declare userProgress: UserProgress[];
 
   declare createdAt: Date;
   declare updatedAt: Date;

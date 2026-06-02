@@ -80,6 +80,7 @@ export class StreaksService {
       current_streak: newCurrentStreak,
       longest_streak: newLongestStreak,
       last_activity_date: today,
+      last_inactivity_email_sent_at: null,
     });
 
     return streak;

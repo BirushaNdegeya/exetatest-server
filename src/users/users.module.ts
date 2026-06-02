@@ -6,9 +6,14 @@ import { UserRole } from '../models/user-role.model';
 import { User } from '../models/user.model';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { UserAuthController } from './user-auth.controller';
+import { StreaksModule } from '../streaks/streaks.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([UserRole, User]), ProfilesModule],
+  imports: [
+    SequelizeModule.forFeature([UserRole, User]),
+    ProfilesModule,
+    StreaksModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController, UserAuthController],
   exports: [UsersService],

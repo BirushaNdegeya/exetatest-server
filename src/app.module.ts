@@ -12,7 +12,6 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { SectionsModule } from './sections/sections.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuestionsModule } from './questions/questions.module';
-import { ProgressModule } from './progress/progress.module';
 import { StreaksModule } from './streaks/streaks.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { CustomSetsModule } from './custom-sets/custom-sets.module';
@@ -32,7 +31,6 @@ import { RefreshToken } from './models/refresh-token.model';
 import { Subject } from './models/subject.model';
 import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
-import { UserProgress } from './models/user-progress.model';
 import { UserStreak } from './models/user-streak.model';
 import { CustomQuestionSet } from './models/custom-question-set.model';
 import { CustomQuestion } from './models/custom-question.model';
@@ -96,7 +94,6 @@ import { Invitation } from './models/invitation.model';
       Subject,
       TestYear,
       Question,
-      UserProgress,
       UserStreak,
       CustomQuestionSet,
       CustomQuestion,
@@ -110,7 +107,6 @@ import { Invitation } from './models/invitation.model';
     SubjectsModule,
     TestYearsModule,
     QuestionsModule,
-    ProgressModule,
     StreaksModule,
     LessonsModule,
     CustomSetsModule,

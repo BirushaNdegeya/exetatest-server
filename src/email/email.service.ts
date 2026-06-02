@@ -78,6 +78,61 @@ export class EmailService {
     });
   }
 
+  async sendInactivityReminder(
+    email: string,
+    name: string,
+    inactivityDays: number,
+  ): Promise<void> {
+    const appName = this.configService.get<string>(
+      'APP_NAME',
+      'EXETAT Mastery',
+    );
+    const appUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:5173',
+    );
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On vous attend sur ${appName}</title>
+  <style>
+    body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background:#f5f5f5; }
+    .container { max-width:600px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+    .header { background:#58cc02; padding:24px 20px; text-align:center; color:#fff; font-weight:800; letter-spacing:0.4px; }
+    .content { padding:32px 24px; color:#333; }
+    h1 { font-size:22px; margin:0 0 12px 0; }
+    p { margin:0 0 12px 0; line-height:1.6; font-size:15px; }
+    .button { display:inline-block; margin-top:16px; background:#58cc02; color:#fff; text-decoration:none; padding:12px 18px; border-radius:10px; font-weight:800; }
+    .muted { color:#777; font-size:13px; margin-top:18px; }
+    .footer { background:#f0fce6; padding:20px; text-align:center; color:#43c000; font-weight:800; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">${appName}</div>
+    <div class="content">
+      <h1>Bonjour ${name},</h1>
+      <p>Ça fait <strong>${inactivityDays} jours</strong> qu’on ne vous a pas vu(e). Une petite séance aujourd’hui peut relancer votre progression.</p>
+      <p><a class="button" href="${appUrl}">Reprendre l’entraînement</a></p>
+      <p class="muted">Si vous n’avez plus accès à ce compte, ignorez simplement cet email. Ceci est un message automatique.</p>
+    </div>
+    <div class="footer">À très vite !</div>
+  </div>
+</body>
+</html>`;
+
+    await this.transporter.sendMail({
+      from: `"${appName}" <${this.configService.get<string>('SMTP_FROM')}>`,
+      to: email,
+      subject: `On vous attend sur ${appName}`,
+      html: htmlContent,
+    });
+  }
+
   private getOTPTemplate(
     name: string,
     appName: string,

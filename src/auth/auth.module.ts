@@ -13,6 +13,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { EmailModule } from '../email/email.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { OtpCleanupService } from './otp-cleanup.service';
+import { StreaksModule } from '../streaks/streaks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { OtpCleanupService } from './otp-cleanup.service';
     PassportModule,
     EmailModule,
     CloudinaryModule,
+    StreaksModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

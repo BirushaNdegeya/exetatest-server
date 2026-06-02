@@ -33,7 +33,6 @@ export class ProfilesService {
       email: user.email,
       section: this.resolveSectionLabel(profile),
       section_id: profile.section_id ?? null,
-      xp: profile.xp ?? 0,
       created_at: profile.createdAt,
       updated_at: profile.updatedAt,
     };

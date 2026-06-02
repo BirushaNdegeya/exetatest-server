@@ -13,6 +13,7 @@ interface UserStreakCreationAttributes {
   current_streak: number;
   longest_streak: number;
   last_activity_date: Date | null;
+  last_inactivity_email_sent_at?: Date | null;
 }
 
 @Table({
@@ -58,6 +59,12 @@ export class UserStreak extends Model<
     allowNull: true,
   })
   last_activity_date: Date | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+  })
+  last_inactivity_email_sent_at: Date | null;
 
   declare createdAt: Date;
   declare updatedAt: Date;

@@ -23,9 +23,6 @@ export class ProfileResponseDto {
   })
   section_id: string | null;
 
-  @ApiProperty({ example: 0 })
-  xp: number;
-
   @ApiProperty({ type: String, format: 'date-time' })
   created_at: Date;
 
