@@ -82,8 +82,6 @@ export class AuthController {
           properties: {
             id: { type: 'string' },
             email: { type: 'string' },
-            name: { type: 'string' },
-            avatarUrl: { type: 'string', nullable: true },
             hasSelectedSections: { type: 'boolean' },
             isFirstLogin: { type: 'boolean' },
             section_id: { type: 'string', nullable: true },
@@ -155,8 +153,6 @@ export class AuthController {
       properties: {
         id: { type: 'string' },
         email: { type: 'string' },
-        name: { type: 'string' },
-        avatarUrl: { type: 'string', nullable: true },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },

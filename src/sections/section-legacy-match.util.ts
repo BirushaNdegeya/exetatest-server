@@ -29,6 +29,11 @@ export function findSectionMatchingLegacyLabel(
     return null;
   }
 
+  const idMatch = sections.find((s) => s.id === legacy);
+  if (idMatch) {
+    return idMatch;
+  }
+
   const n = normalizeSectionKey(legacy);
   const exact = sections.find((s) => normalizeSectionKey(s.title) === n);
   if (exact) {

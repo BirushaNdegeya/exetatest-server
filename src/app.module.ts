@@ -6,22 +6,16 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { EmailModule } from './email/email.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { SectionsModule } from './sections/sections.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { QuestionsModule } from './questions/questions.module';
 import { StreaksModule } from './streaks/streaks.module';
-import { LessonsModule } from './lessons/lessons.module';
-import { CustomSetsModule } from './custom-sets/custom-sets.module';
-import { InvitationsModule } from './invitations/invitations.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
-import { SharedQuizModule } from './shared-quiz/shared-quiz.module';
 import { TestYearsModule } from './test-years/test-years.module';
 import { PracticeModule } from './practice/practice.module';
-import { DashboardModule } from './dashboard/dashboard.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Profile } from './models/profile.model';
@@ -32,9 +26,6 @@ import { Subject } from './models/subject.model';
 import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
 import { UserStreak } from './models/user-streak.model';
-import { CustomQuestionSet } from './models/custom-question-set.model';
-import { CustomQuestion } from './models/custom-question.model';
-import { Invitation } from './models/invitation.model';
 
 @Module({
   imports: [
@@ -95,12 +86,8 @@ import { Invitation } from './models/invitation.model';
       TestYear,
       Question,
       UserStreak,
-      CustomQuestionSet,
-      CustomQuestion,
-      Invitation,
     ]),
     EmailModule,
-    CloudinaryModule,
     AuthModule,
     ProfilesModule,
     SectionsModule,
@@ -108,14 +95,9 @@ import { Invitation } from './models/invitation.model';
     TestYearsModule,
     QuestionsModule,
     StreaksModule,
-    LessonsModule,
-    CustomSetsModule,
-    InvitationsModule,
     UsersModule,
     AdminModule,
-    SharedQuizModule,
     PracticeModule,
-    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

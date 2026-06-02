@@ -14,7 +14,6 @@ import { Profile } from '../models/profile.model';
 import { RefreshToken } from '../models/refresh-token.model';
 import { JwtPayload } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { createHash, randomBytes } from 'crypto';
 import { Op } from 'sequelize';
 import { StreaksService } from '../streaks/streaks.service';
@@ -22,8 +21,6 @@ import { StreaksService } from '../streaks/streaks.service';
 type UserAuthState = {
   id: string;
   email: string;
-  name: string;
-  avatarUrl: string | null;
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
@@ -50,7 +47,6 @@ export class AuthService {
     private refreshTokenModel: typeof RefreshToken,
     private jwtService: JwtService,
     private emailService: EmailService,
-    private cloudinaryService: CloudinaryService,
     private streaksService: StreaksService,
   ) {}
 
@@ -109,8 +105,6 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
-      avatarUrl: user.avatarUrl,
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: profile?.section_id ?? null,
@@ -164,14 +158,9 @@ export class AuthService {
       throw new UnauthorizedException('Aucun fichier fourni');
     }
 
-    const uploadResult = await this.cloudinaryService.uploadImage(file.buffer);
-
-    await user.update({ avatarUrl: uploadResult.secure_url });
-
-    return {
-      message: 'Avatar mis à jour avec succès',
-      avatarUrl: user.avatarUrl,
-    };
+    throw new BadRequestException(
+      "La mise a jour d'avatar est temporairement indisponible",
+    );
   }
 
   /**

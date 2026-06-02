@@ -11,7 +11,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { EmailModule } from '../email/email.module';
-import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { OtpCleanupService } from './otp-cleanup.service';
 import { StreaksModule } from '../streaks/streaks.module';
 
@@ -21,7 +20,6 @@ import { StreaksModule } from '../streaks/streaks.module';
     SequelizeModule.forFeature([User, Otp, Profile, RefreshToken]),
     PassportModule,
     EmailModule,
-    CloudinaryModule,
     StreaksModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
