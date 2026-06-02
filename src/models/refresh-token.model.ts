@@ -1,25 +1,28 @@
 import {
+  BelongsTo,
   Column,
   DataType,
+  ForeignKey,
   Model,
   Table,
-  ForeignKey,
-  BelongsTo,
 } from 'sequelize-typescript';
 import { User } from './user.model';
 
-interface OtpCreationAttributes {
+interface RefreshTokenCreationAttributes {
   userId: string;
-  code: string;
+  tokenHash: string;
   expiresAt: Date;
-  isVerified?: boolean;
+  revokedAt?: Date | null;
 }
 
 @Table({
-  tableName: 'otps',
+  tableName: 'refresh_tokens',
   timestamps: true,
 })
-export class Otp extends Model<Otp, OtpCreationAttributes> {
+export class RefreshToken extends Model<
+  RefreshToken,
+  RefreshTokenCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
@@ -32,28 +35,33 @@ export class Otp extends Model<Otp, OtpCreationAttributes> {
     type: DataType.UUID,
     allowNull: false,
   })
-  userId: string;
+  declare userId: string;
 
   @BelongsTo(() => User)
-  user: User;
+  declare user: User;
 
+  /**
+   * SHA-256 hash of the plaintext refresh token.
+   * We never store the raw refresh token in the database.
+   */
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    unique: true,
   })
-  code: string;
+  declare tokenHash: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
   })
-  expiresAt: Date;
+  declare expiresAt: Date;
 
   @Column({
-    type: DataType.BOOLEAN,
-    defaultValue: false,
+    type: DataType.DATE,
+    allowNull: true,
   })
-  isVerified: boolean;
+  declare revokedAt: Date | null;
 
   declare createdAt: Date;
   declare updatedAt: Date;

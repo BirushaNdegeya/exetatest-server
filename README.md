@@ -379,7 +379,7 @@ The starter includes professional HTML email templates:
 - Mobile-responsive
 
 ### 2. Login Notification Email
-- IP address tracking
+- IP address tracking -> region Drc, Goma
 - Timestamp of login
 - Security alert styling
 - Links to account security

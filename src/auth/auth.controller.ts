@@ -28,8 +28,8 @@ export class AuthController {
 
   // Google OAuth endpoints removed – using email + OTP only
 
+  @Post('request-otp')
   @Post('otp/send')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @ApiOperation({ summary: 'Send OTP to user email' })
   @ApiBody({
     schema: {
@@ -56,8 +56,8 @@ export class AuthController {
     return this.authService.sendOTP(email, ipAddress);
   }
 
+  @Post('verify-otp')
   @Post('otp/verify')
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Verify OTP and login user' })
   @ApiBody({
     schema: {
@@ -76,6 +76,7 @@ export class AuthController {
       type: 'object',
       properties: {
         access_token: { type: 'string' },
+        refresh_token: { type: 'string' },
         user: {
           type: 'object',
           properties: {
@@ -83,6 +84,9 @@ export class AuthController {
             email: { type: 'string' },
             name: { type: 'string' },
             avatarUrl: { type: 'string', nullable: true },
+            hasSelectedSections: { type: 'boolean' },
+            isFirstLogin: { type: 'boolean' },
+            section_id: { type: 'string', nullable: true },
           },
         },
       },
@@ -97,6 +101,38 @@ export class AuthController {
   ) {
     const ipAddress = req.ip || req.connection.remoteAddress || '0.0.0.0';
     return this.authService.verifyOTP(email, otp, ipAddress);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using a refresh token' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refresh_token: { type: 'string', example: 'refresh-token' },
+        refreshToken: { type: 'string', example: 'refresh-token' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Refresh token valid, returns new tokens',
+    schema: {
+      type: 'object',
+      properties: {
+        access_token: { type: 'string' },
+        refresh_token: { type: 'string' },
+        user: { type: 'object' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Refresh token invalid or expired' })
+  async refresh(
+    @Body('refresh_token') refreshTokenSnake: string,
+    @Body('refreshToken') refreshTokenCamel?: string,
+  ) {
+    const refreshToken = refreshTokenSnake ?? refreshTokenCamel;
+    return this.authService.refresh(refreshToken ?? '');
   }
 
   @Get('profile')

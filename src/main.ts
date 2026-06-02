@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -19,16 +19,23 @@ async function bootstrap() {
   app.use(compression());
 
   // Set global prefix for routes
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api');
 
   // Enable CORS for all origins
   app.enableCors();
   app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   if (enableSwagger) {
     const config = new DocumentBuilder()
-      .setTitle('EXETAT Mastery API')
-      .setDescription('API for EXETAT Prep App - NestJS with Sequelize')
+      .setTitle('EXETATEST')
+      .setDescription('API for EXETATEST')
       .setVersion('1.0')
       .addBearerAuth(
         {
@@ -47,7 +54,7 @@ async function bootstrap() {
       ignoreGlobalPrefix: false,
     });
 
-    SwaggerModule.setup('api/v1/docs', app, document);
+    SwaggerModule.setup('/', app, document);
   } else {
     logger.log('Swagger is disabled in production startup');
   }
