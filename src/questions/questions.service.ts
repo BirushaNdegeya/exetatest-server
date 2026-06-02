@@ -1,50 +1,42 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Question } from '../models/question.model';
-import { Subject } from '../models/subject.model';
-import { TestYear } from '../models/test-year.model';
 import { Op } from 'sequelize';
-
-type QuestionOptions = {
-  option1: string;
-  option2: string;
-  option3: string;
-  option4: string;
-  option5: string;
-};
+import { Category } from '../models/category.model';
+import { Exam } from '../models/exam.model';
+import { Question } from '../models/question.model';
 
 type CreateQuestionPayload = {
-  question_text: string;
-  options: QuestionOptions;
-  correctAnswer: number;
-  explanation: string;
-  test_year_id: string;
-  passage?: string | null;
-  passage_group?: string | null;
-  question_type?: string;
-  language?: string | null;
+  exam_id?: string | null;
+  section_id?: string | null;
+  category_id: string;
+  text: string;
+  options: string[];
+  correct_answer: string;
+  explanation?: string | null;
 };
 
-type CreateQuestionForYearPayload = Omit<CreateQuestionPayload, 'test_year_id'>;
 type UpdateQuestionPayload = Partial<CreateQuestionPayload>;
-type QuestionPersistencePayload = CreateQuestionPayload & {
-  subject_id: string;
-  year: number;
-};
 
 @Injectable()
 export class QuestionsService {
   constructor(
     @InjectModel(Question)
-    private questionModel: typeof Question,
-    @InjectModel(TestYear)
-    private testYearModel: typeof TestYear,
+    private readonly questionModel: typeof Question,
+    @InjectModel(Category)
+    private readonly categoryModel: typeof Category,
+    @InjectModel(Exam)
+    private readonly examModel: typeof Exam,
   ) {}
 
   async getAllQuestions(
-    subjectId?: string,
+    sectionId?: string,
+    categoryId?: string,
+    examId?: string,
     year?: number,
-    testYearId?: string,
     limit: number = 20,
     page: number = 1,
     search?: string,
@@ -54,21 +46,33 @@ export class QuestionsService {
   }> {
     const normalizedLimit = Number(limit) > 0 ? Number(limit) : 20;
     const normalizedPage = Number(page) > 0 ? Number(page) : 1;
-    const where: any = {};
-    if (testYearId) where.test_year_id = testYearId;
-    if (search) where.question_text = { [Op.iLike]: `%${search}%` };
-
+    const where: Record<string, unknown> = {};
     const include: any[] = [
-      {
-        model: TestYear,
-        include: [Subject],
-      },
+      { model: Category },
+      { model: Exam, required: false },
     ];
 
-    if (subjectId || year) {
-      include[0].where = {};
-      if (subjectId) include[0].where.subject_id = subjectId;
-      if (year) include[0].where.year = Number(year);
+    if (categoryId) {
+      const category = await this.ensureCategoryExists(categoryId);
+      where.category_id = category.id;
+      if (category.is_universal) {
+        where.section_id = null;
+      } else if (sectionId) {
+        where.section_id = sectionId;
+      }
+    } else if (sectionId) {
+      where.section_id = sectionId;
+    }
+
+    if (examId) {
+      where.exam_id = examId;
+    }
+    if (year) {
+      include[1].required = true;
+      include[1].where = { year: Number(year) };
+    }
+    if (search) {
+      where.text = { [Op.iLike]: `%${search}%` };
     }
 
     const offset = (normalizedPage - 1) * normalizedLimit;
@@ -92,40 +96,27 @@ export class QuestionsService {
   }
 
   async getRandomQuestions(
-    subjectId?: string,
+    sectionId?: string,
+    categoryId?: string,
+    examId?: string,
     year?: number,
     limit: number = 7,
   ): Promise<Question[]> {
+    const { data } = await this.getAllQuestions(
+      sectionId,
+      categoryId,
+      examId,
+      year,
+      500,
+      1,
+    );
     const normalizedLimit = Number(limit) > 0 ? Number(limit) : 7;
-    const questions = await this.questionModel.findAll({
-      include: [
-        {
-          model: TestYear,
-          include: [Subject],
-          ...(subjectId || year
-            ? {
-                where: {
-                  ...(subjectId ? { subject_id: subjectId } : {}),
-                  ...(year ? { year } : {}),
-                },
-              }
-            : {}),
-        },
-      ],
-    });
-
-    // Shuffle and limit
-    return questions.sort(() => 0.5 - Math.random()).slice(0, normalizedLimit);
+    return data.sort(() => 0.5 - Math.random()).slice(0, normalizedLimit);
   }
 
   async getQuestionById(id: string): Promise<Question> {
     const question = await this.questionModel.findByPk(id, {
-      include: [
-        {
-          model: TestYear,
-          include: [Subject],
-        },
-      ],
+      include: [Category, Exam],
     });
     if (!question) {
       throw new NotFoundException('Question introuvable');
@@ -133,59 +124,24 @@ export class QuestionsService {
     return question;
   }
 
-  async getQuestionsByYear(
-    yearId: string,
-    page: number = 1,
-    limit: number = 20,
-    search?: string,
-  ): Promise<{
-    data: Question[];
-    meta: { total: number; page: number; limit: number };
-  }> {
-    await this.ensureYearExists(yearId);
-    return this.getAllQuestions(
-      undefined,
-      undefined,
-      yearId,
-      limit,
-      page,
-      search,
-    );
-  }
-
   async createQuestion(data: CreateQuestionPayload): Promise<Question> {
-    const testYear = await this.ensureYearExists(data.test_year_id);
-    return this.questionModel.create(this.attachSubjectId(data, testYear));
-  }
-
-  async createQuestionForYear(
-    yearId: string,
-    data: CreateQuestionForYearPayload,
-  ): Promise<Question> {
-    const testYear = await this.ensureYearExists(yearId);
-
-    return this.questionModel.create(
-      this.attachSubjectId(
-        {
-          ...data,
-          test_year_id: yearId,
-        },
-        testYear,
-      ),
-    );
+    await this.validateQuestionScope(data.category_id, data.section_id);
+    if (data.exam_id) {
+      await this.ensureExamExists(data.exam_id);
+    }
+    return this.questionModel.create(data);
   }
 
   async createBulkQuestions(
     data: CreateQuestionPayload[],
   ): Promise<Question[]> {
-    const rows: QuestionPersistencePayload[] = [];
-
     for (const item of data) {
-      const testYear = await this.ensureYearExists(item.test_year_id);
-      rows.push(this.attachSubjectId(item, testYear));
+      await this.validateQuestionScope(item.category_id, item.section_id);
+      if (item.exam_id) {
+        await this.ensureExamExists(item.exam_id);
+      }
     }
-
-    return this.questionModel.bulkCreate(rows);
+    return this.questionModel.bulkCreate(data);
   }
 
   async updateQuestion(
@@ -193,12 +149,12 @@ export class QuestionsService {
     data: UpdateQuestionPayload,
   ): Promise<Question> {
     const question = await this.getQuestionById(id);
-    if (data.test_year_id) {
-      const testYear = await this.ensureYearExists(data.test_year_id);
-      Object.assign(data, {
-        subject_id: testYear.subject_id,
-        year: testYear.year,
-      });
+    const resolvedCategoryId = data.category_id ?? question.category_id;
+    const resolvedSectionId =
+      data.section_id === undefined ? question.section_id : data.section_id;
+    await this.validateQuestionScope(resolvedCategoryId, resolvedSectionId);
+    if (data.exam_id) {
+      await this.ensureExamExists(data.exam_id);
     }
     await question.update(data);
     return question;
@@ -209,24 +165,36 @@ export class QuestionsService {
     await question.destroy();
   }
 
-  private async ensureYearExists(testYearId: string): Promise<TestYear> {
-    const testYear = await this.testYearModel.findByPk(testYearId);
-
-    if (!testYear) {
-      throw new NotFoundException('Bloc année introuvable');
+  private async ensureCategoryExists(categoryId: string): Promise<Category> {
+    const category = await this.categoryModel.findByPk(categoryId);
+    if (!category) {
+      throw new NotFoundException('Categorie introuvable');
     }
-
-    return testYear;
+    return category;
   }
 
-  private attachSubjectId(
-    data: CreateQuestionPayload,
-    testYear: TestYear,
-  ): QuestionPersistencePayload {
-    return {
-      ...data,
-      subject_id: testYear.subject_id,
-      year: testYear.year,
-    };
+  private async ensureExamExists(examId: string): Promise<Exam> {
+    const exam = await this.examModel.findByPk(examId);
+    if (!exam) {
+      throw new NotFoundException('Examen introuvable');
+    }
+    return exam;
+  }
+
+  private async validateQuestionScope(
+    categoryId: string,
+    sectionId?: string | null,
+  ): Promise<void> {
+    const category = await this.ensureCategoryExists(categoryId);
+    if (category.is_universal && sectionId) {
+      throw new BadRequestException(
+        'Les categories universelles ne doivent pas fournir section_id',
+      );
+    }
+    if (!category.is_universal && !sectionId) {
+      throw new BadRequestException(
+        'Les categories specifiques doivent fournir section_id',
+      );
+    }
   }
 }

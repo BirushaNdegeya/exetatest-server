@@ -5,10 +5,8 @@ import {
   Table,
   ForeignKey,
   BelongsTo,
-  HasMany,
 } from 'sequelize-typescript';
 import { Subject } from './subject.model';
-import { Question } from './question.model';
 
 interface TestYearCreationAttributes {
   year: number;
@@ -50,9 +48,6 @@ export class TestYear extends Model<TestYear, TestYearCreationAttributes> {
 
   @BelongsTo(() => Subject)
   declare subject: Subject;
-
-  @HasMany(() => Question)
-  declare questions: Question[];
 
   @Column({
     type: DataType.INTEGER,

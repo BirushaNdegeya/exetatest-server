@@ -9,12 +9,12 @@ import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { SectionsModule } from './sections/sections.module';
-import { SubjectsModule } from './subjects/subjects.module';
+import { CategoriesModule } from './categories/categories.module';
 import { QuestionsModule } from './questions/questions.module';
 import { StreaksModule } from './streaks/streaks.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
-import { TestYearsModule } from './test-years/test-years.module';
+import { ExamsModule } from './exams/exams.module';
 import { PracticeModule } from './practice/practice.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
@@ -26,6 +26,10 @@ import { Subject } from './models/subject.model';
 import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
 import { UserStreak } from './models/user-streak.model';
+import { Category } from './models/category.model';
+import { Exam } from './models/exam.model';
+import { LanguagePassage } from './models/language-passage.model';
+import { LanguageQuestion } from './models/language-question.model';
 
 @Module({
   imports: [
@@ -85,14 +89,18 @@ import { UserStreak } from './models/user-streak.model';
       Subject,
       TestYear,
       Question,
+      Category,
+      Exam,
+      LanguagePassage,
+      LanguageQuestion,
       UserStreak,
     ]),
     EmailModule,
     AuthModule,
     ProfilesModule,
     SectionsModule,
-    SubjectsModule,
-    TestYearsModule,
+    CategoriesModule,
+    ExamsModule,
     QuestionsModule,
     StreaksModule,
     UsersModule,

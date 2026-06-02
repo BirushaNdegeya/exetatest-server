@@ -4,16 +4,16 @@ import { PracticeService } from './practice.service';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SectionsModule } from '../sections/sections.module';
 import { StreaksModule } from '../streaks/streaks.module';
-import { SubjectsModule } from '../subjects/subjects.module';
-import { TestYearsModule } from '../test-years/test-years.module';
+import { CategoriesModule } from '../categories/categories.module';
+import { ExamsModule } from '../exams/exams.module';
 
 @Module({
   imports: [
     ProfilesModule,
     SectionsModule,
     StreaksModule,
-    SubjectsModule,
-    TestYearsModule,
+    CategoriesModule,
+    ExamsModule,
   ],
   controllers: [PracticeController],
   providers: [PracticeService],

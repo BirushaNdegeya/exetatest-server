@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ProfilesService } from '../profiles/profiles.service';
 import { SectionsService } from '../sections/sections.service';
 import { StreaksService } from '../streaks/streaks.service';
-import { SubjectsService } from '../subjects/subjects.service';
-import { TestYearsService } from '../test-years/test-years.service';
+import { CategoriesService } from '../categories/categories.service';
+import { ExamsService } from '../exams/exams.service';
 import { ProfileResponseDto } from '../profiles/dto/profile-response.dto';
 import { DrcSection } from '../sections/drc-sections.constants';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
@@ -18,11 +18,12 @@ export interface PracticeSubjectRow {
   id: string;
   name: string;
   description: string | null;
-  branch_type: string;
-  icon: string | null;
+  is_universal: boolean;
   question_count: number;
   years: PracticeYearBlock[];
 }
+
+export type PracticeCategoryRow = PracticeSubjectRow;
 
 export interface PracticePageResponse {
   profile: ProfileResponseDto;
@@ -33,7 +34,7 @@ export interface PracticePageResponse {
     last_activity_date: Date | null;
   };
   selected_section_id: string | null;
-  subjects: PracticeSubjectRow[];
+  categories: PracticeCategoryRow[];
 }
 
 @Injectable()
@@ -42,8 +43,8 @@ export class PracticeService {
     private readonly profilesService: ProfilesService,
     private readonly sectionsService: SectionsService,
     private readonly streaksService: StreaksService,
-    private readonly subjectsService: SubjectsService,
-    private readonly testYearsService: TestYearsService,
+    private readonly categoriesService: CategoriesService,
+    private readonly examsService: ExamsService,
   ) {}
 
   async getPracticePage(userId: string): Promise<PracticePageResponse> {
@@ -94,18 +95,20 @@ export class PracticeService {
         sections,
         streak,
         selected_section_id: null,
-        subjects: [],
+        categories: [],
       };
     }
 
-    const sectionSubjects = await this.subjectsService.getAllSubjects(
-      matchingSection.id,
-    );
+    const [categories, exams] = await Promise.all([
+      this.categoriesService.getAllCategories(),
+      this.examsService.getAllExams(),
+    ]);
 
-    const subjects: PracticeSubjectRow[] = await Promise.all(
-      sectionSubjects.map(async (sub) => {
-        const yearsRaw = await this.testYearsService.getYearsBySubject(sub.id);
-        const years: PracticeYearBlock[] = yearsRaw
+    const categoriesRows: PracticeCategoryRow[] = await Promise.all(
+      categories.map(async (sub) => {
+        const shouldAttachSectionSpecific =
+          !sub.is_universal && Boolean(matchingSection.id);
+        const years: PracticeYearBlock[] = exams
           .map((y) => ({
             id: y.id,
             year: Number(y.year),
@@ -117,10 +120,9 @@ export class PracticeService {
           id: sub.id,
           name: sub.name,
           description: sub.description ?? null,
-          branch_type: sub.branch_type ?? 'Culture Générale',
-          icon: (sub as { icon?: string | null }).icon ?? null,
+          is_universal: sub.is_universal,
           question_count: Number(sub.question_count ?? 0),
-          years,
+          years: shouldAttachSectionSpecific || sub.is_universal ? years : [],
         };
       }),
     );
@@ -130,7 +132,7 @@ export class PracticeService {
       sections,
       streak,
       selected_section_id: matchingSection.id,
-      subjects,
+      categories: categoriesRows,
     };
   }
 }

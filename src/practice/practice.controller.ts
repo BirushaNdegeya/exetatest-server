@@ -21,7 +21,7 @@ export class PracticeController {
   @ApiOperation({
     summary: 'Practice page bootstrap',
     description:
-      'Returns profile, sections, streak, and subjects (with year blocks and question counts) for the user’s selected profile section — the data needed to render the /practice page in one request.',
+      'Returns profile, sections, streak, and categories (with exam years and counts) for the user selected profile section.',
   })
   @ApiOkResponse({
     description: 'Aggregated practice data',
@@ -39,12 +39,12 @@ export class PracticeController {
           last_activity_date: '2026-04-03',
         },
         selected_section_id: '…',
-        subjects: [
+        categories: [
           {
             id: '…',
-            name: 'Mathématiques',
+            name: 'Culture generale',
             description: null,
-            icon: null,
+            is_universal: true,
             question_count: 42,
             years: [{ id: '…', year: 2024, question_count: 20 }],
           },

@@ -8,68 +8,41 @@ export class QuestionResponseDto {
   id: string;
 
   @ApiProperty({
-    example: 'Quelle est la capitale de la RDC ?',
+    example: 'Le dialogue social aide surtout a :',
   })
-  question_text: string;
+  text: string;
 
   @ApiProperty({
-    description: '5 fixed answer options labeled 1-5',
-    example: {
-      option1: 'Kinshasa (1)',
-      option2: 'Lubumbashi (2)',
-      option3: 'Goma (3)',
-      option4: 'Matadi (4)',
-      option5: 'Bukavu (5)',
-    },
+    example: ['A. Aggraver les conflits', 'B. Trouver des solutions communes'],
   })
-  options: {
-    option1: string;
-    option2: string;
-    option3: string;
-    option4: string;
-    option5: string;
-  };
+  options: string[];
 
   @ApiProperty({
-    description: 'Correct answer position (1-5)',
-    example: 1,
+    example: 'B',
   })
-  correctAnswer: number;
+  correct_answer: string;
 
-  @ApiProperty({
-    example:
-      'Kinshasa (1) est la capitale de la Republique Democratique du Congo.',
-  })
-  explanation: string;
+  @ApiProperty({ format: 'uuid' })
+  category_id: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     format: 'uuid',
-  })
-  test_year_id: string;
-
-  @ApiPropertyOptional({
-    example: 'Lisez le passage suivant avant de repondre.',
     nullable: true,
   })
-  passage?: string | null;
+  exam_id?: string | null;
 
   @ApiPropertyOptional({
-    example: 'lang-fr-2026-passage-1',
+    example: 'mathematique',
     nullable: true,
   })
-  passage_group?: string | null;
-
-  @ApiProperty({
-    example: 'standard',
-  })
-  question_type: string;
+  section_id?: string | null;
 
   @ApiPropertyOptional({
-    example: 'francais',
+    example: 'Le dialogue social vise la cooperation et le compromis.',
     nullable: true,
   })
-  language?: string | null;
+  explanation?: string | null;
 
   @ApiProperty({
     type: String,

@@ -28,26 +28,32 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionsService } from './questions.service';
 
 @ApiTags('Questions')
-@Controller()
+@Controller('questions')
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
-  @Get('questions')
+  @Get()
   @ApiOperation({
     summary: 'List questions',
     description:
-      'Returns questions with optional filtering by subject, year block, exam year, and text search.',
+      'Returns questions with optional filters by section, category, exam, year, and text search.',
   })
   @ApiQuery({
-    name: 'subject_id',
+    name: 'section_id',
     required: false,
-    description: 'Filter by subject ID',
+    description: 'Filter by section slug for section-specific categories',
+    schema: { type: 'string', example: 'mathematique' },
+  })
+  @ApiQuery({
+    name: 'category_id',
+    required: false,
+    description: 'Filter by category ID',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiQuery({
-    name: 'test_year_id',
+    name: 'exam_id',
     required: false,
-    description: 'Filter by year block ID',
+    description: 'Filter by exam ID',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiQuery({
@@ -82,21 +88,13 @@ export class QuestionsController {
         data: [
           {
             id: '550e8400-e29b-41d4-a716-446655440000',
-            question_text: 'Quelle est la capitale de la RDC ?',
-            options: {
-              option1: 'Kinshasa',
-              option2: 'Lubumbashi',
-              option3: 'Goma',
-              option4: 'Matadi',
-              option5: 'Bukavu',
-            },
-            correctAnswer: 1,
-            explanation: 'Kinshasa est la capitale.',
-            test_year_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-            passage: null,
-            passage_group: null,
-            question_type: 'standard',
-            language: null,
+            text: 'Le dialogue social aide surtout a :',
+            options: ['A. Aggraver', 'B. Trouver des solutions'],
+            correct_answer: 'B',
+            category_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+            exam_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+            section_id: null,
+            explanation: 'Il permet de trouver des solutions communes.',
           },
         ],
         meta: {
@@ -108,33 +106,47 @@ export class QuestionsController {
     },
   })
   async getAllQuestions(
-    @Query('subject_id') subjectId?: string,
+    @Query('section_id') sectionId?: string,
+    @Query('category_id') categoryId?: string,
+    @Query('exam_id') examId?: string,
     @Query('year') year?: number,
-    @Query('test_year_id') testYearId?: string,
     @Query('limit') limit: number = 20,
     @Query('page') page: number = 1,
     @Query('search') search?: string,
   ) {
     return this.questionsService.getAllQuestions(
-      subjectId,
+      sectionId,
+      categoryId,
+      examId,
       year,
-      testYearId,
       Number(limit),
       Number(page),
       search,
     );
   }
 
-  @Get('questions/random')
+  @Get('random')
   @ApiOperation({
     summary: 'Get random questions',
     description:
       'Returns a shuffled question subset, optionally filtered by subject or year.',
   })
   @ApiQuery({
-    name: 'subject_id',
+    name: 'section_id',
     required: false,
-    description: 'Filter random questions by subject ID',
+    description: 'Filter random questions by section slug',
+    schema: { type: 'string', example: 'mathematique' },
+  })
+  @ApiQuery({
+    name: 'category_id',
+    required: false,
+    description: 'Filter random questions by category ID',
+    schema: { type: 'string', format: 'uuid' },
+  })
+  @ApiQuery({
+    name: 'exam_id',
+    required: false,
+    description: 'Filter random questions by exam ID',
     schema: { type: 'string', format: 'uuid' },
   })
   @ApiQuery({
@@ -156,18 +168,22 @@ export class QuestionsController {
     isArray: true,
   })
   async getRandomQuestions(
-    @Query('subject_id') subjectId?: string,
+    @Query('section_id') sectionId?: string,
+    @Query('category_id') categoryId?: string,
+    @Query('exam_id') examId?: string,
     @Query('year') year?: number,
     @Query('limit') limit: number = 7,
   ) {
     return this.questionsService.getRandomQuestions(
-      subjectId,
+      sectionId,
+      categoryId,
+      examId,
       year,
       Number(limit),
     );
   }
 
-  @Get('questions/:id')
+  @Get(':id')
   @ApiOperation({
     summary: 'Get a question by ID',
     description:
@@ -188,160 +204,55 @@ export class QuestionsController {
     return this.questionsService.getQuestionById(id);
   }
 
-  @Get('years/:yearId/questions')
-  @ApiOperation({
-    summary: 'List questions for a year block',
-    description:
-      'Returns paginated questions that belong to the selected year block.',
-  })
-  @ApiParam({
-    name: 'yearId',
-    description: 'Year block identifier',
-    schema: { type: 'string', format: 'uuid' },
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'Page number for pagination',
-    schema: { type: 'number', example: 1, default: 1 },
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Maximum number of questions to return per page',
-    schema: { type: 'number', example: 20, default: 20 },
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    description: 'Search inside question text',
-    schema: { type: 'string', example: 'capitale' },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Questions returned successfully',
-    schema: {
-      example: {
-        data: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            question_text: 'Quelle est la capitale de la RDC ?',
-            options: {
-              option1: 'Kinshasa',
-              option2: 'Lubumbashi',
-              option3: 'Goma',
-              option4: 'Matadi',
-              option5: 'Bukavu',
-            },
-            correctAnswer: 1,
-            explanation: 'Kinshasa est la capitale.',
-            test_year_id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-            passage: null,
-            passage_group: null,
-            question_type: 'standard',
-            language: null,
-          },
-        ],
-        meta: {
-          total: 1,
-          page: 1,
-          limit: 20,
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Year block not found' })
-  async getQuestionsByYear(
-    @Param('yearId') yearId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-    @Query('search') search?: string,
-  ) {
-    return this.questionsService.getQuestionsByYear(
-      yearId,
-      Number(page),
-      Number(limit),
-      search,
-    );
-  }
-
-  @Post('years/:yearId/questions')
+  @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Create a question in a year block',
+    summary: 'Create a question',
     description:
-      'Creates a question under the selected year block. Send exactly 5 options as option1 to option5, then set correctAnswer to the winning option number from 1 to 5.',
-  })
-  @ApiParam({
-    name: 'yearId',
-    description: 'Year block identifier',
-    schema: { type: 'string', format: 'uuid' },
+      'Creates a question linked to category/exam and applies universal-vs-section-specific rules from the category.',
   })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        question_text: {
+        text: {
           type: 'string',
-          example: 'Quelle est la capitale de la RDC ?',
+          example: 'Le dialogue social aide surtout a :',
         },
         options: {
-          type: 'object',
-          properties: {
-            option1: { type: 'string', example: 'Kinshasa' },
-            option2: { type: 'string', example: 'Lubumbashi' },
-            option3: { type: 'string', example: 'Goma' },
-            option4: { type: 'string', example: 'Matadi' },
-            option5: { type: 'string', example: 'Bukavu' },
-          },
-          required: ['option1', 'option2', 'option3', 'option4', 'option5'],
+          type: 'array',
+          items: { type: 'string' },
         },
-        correctAnswer: {
-          type: 'number',
-          example: 1,
-          minimum: 1,
-          maximum: 5,
-          description: 'Number of the correct option, from 1 to 5',
-        },
-        explanation: { type: 'string', example: 'Kinshasa est la capitale.' },
-        passage: { type: 'string', nullable: true, example: null },
-        passage_group: { type: 'string', nullable: true, example: null },
-        question_type: {
+        correct_answer: {
           type: 'string',
-          enum: [
-            'standard',
-            'math_equation',
-            'language_passage',
-            'dissertation',
-            'oral',
-          ],
-          example: 'standard',
+          example: 'B',
         },
-        language: {
+        category_id: {
+          type: 'string',
+          format: 'uuid',
+        },
+        exam_id: {
+          type: 'string',
+          format: 'uuid',
+          nullable: true,
+        },
+        section_id: {
           type: 'string',
           nullable: true,
-          enum: ['francais', 'anglais'],
-          example: null,
         },
+        explanation: { type: 'string', example: 'Kinshasa est la capitale.' },
       },
-      required: ['question_text', 'options', 'correctAnswer', 'explanation'],
+      required: ['text', 'options', 'correct_answer', 'category_id'],
       example: {
-        question_text: 'Quelle est la capitale de la RDC ?',
-        options: {
-          option1: 'Kinshasa',
-          option2: 'Lubumbashi',
-          option3: 'Goma',
-          option4: 'Matadi',
-          option5: 'Bukavu',
-        },
-        correctAnswer: 1,
-        explanation: 'Kinshasa est la capitale.',
-        passage: null,
-        passage_group: null,
-        question_type: 'standard',
-        language: null,
+        text: 'Le dialogue social aide surtout a :',
+        options: ['A. Aggraver', 'B. Trouver des solutions'],
+        correct_answer: 'B',
+        category_id: '550e8400-e29b-41d4-a716-446655440000',
+        exam_id: '550e8400-e29b-41d4-a716-446655440000',
+        section_id: null,
+        explanation: 'Le dialogue social cherche un compromis.',
       },
     },
   })
@@ -352,25 +263,18 @@ export class QuestionsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Year block not found' })
-  async createQuestionForYear(
-    @Param('yearId') yearId: string,
-    @Body() createQuestionDto: Omit<CreateQuestionDto, 'test_year_id'>,
-  ) {
-    return this.questionsService.createQuestionForYear(
-      yearId,
-      createQuestionDto,
-    );
+  async createQuestion(@Body() createQuestionDto: CreateQuestionDto) {
+    return this.questionsService.createQuestion(createQuestionDto);
   }
 
-  @Post('questions/bulk')
+  @Post('bulk')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create multiple questions',
     description:
-      'Bulk creates questions. Each item must provide a valid year block ID, 5 labeled options (option1-option5), and a numeric correctAnswer between 1 and 5.',
+      'Bulk creates questions and validates universal-vs-section-specific category rules for each row.',
   })
   @ApiBody({ type: CreateQuestionDto, isArray: true })
   @ApiResponse({
@@ -385,14 +289,14 @@ export class QuestionsController {
     return this.questionsService.createBulkQuestions(createQuestionDtos);
   }
 
-  @Put('questions/:id')
+  @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a question',
     description:
-      'Updates an existing question. You can also move the question to another year block by sending a new test_year_id. If updating choices, send the numbered options object and use correctAnswer from 1 to 5.',
+      'Updates an existing question with the same universal-vs-section-specific validation.',
   })
   @ApiParam({
     name: 'id',
@@ -407,7 +311,7 @@ export class QuestionsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Question or year block not found' })
+  @ApiResponse({ status: 404, description: 'Question not found' })
   async updateQuestion(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
@@ -415,13 +319,13 @@ export class QuestionsController {
     return this.questionsService.updateQuestion(id, updateQuestionDto);
   }
 
-  @Delete('questions/:id')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a question',
-    description: 'Deletes a single question from a year block.',
+    description: 'Deletes a single question.',
   })
   @ApiParam({
     name: 'id',

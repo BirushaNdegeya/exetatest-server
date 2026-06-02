@@ -1,5 +1,4 @@
 import {
-  AllowNull,
   BelongsTo,
   Column,
   DataType,
@@ -7,13 +6,10 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Category } from './category.model';
-import { Exam } from './exam.model';
+import { LanguagePassage } from './language-passage.model';
 
-interface QuestionCreationAttributes {
-  exam_id?: string | null;
-  section_id?: string | null;
-  category_id: string;
+interface LanguageQuestionCreationAttributes {
+  passage_id?: string | null;
   text: string;
   options: string[];
   correct_answer: string;
@@ -21,10 +17,13 @@ interface QuestionCreationAttributes {
 }
 
 @Table({
-  tableName: 'questions',
+  tableName: 'language_questions',
   timestamps: true,
 })
-export class Question extends Model<Question, QuestionCreationAttributes> {
+export class LanguageQuestion extends Model<
+  LanguageQuestion,
+  LanguageQuestionCreationAttributes
+> {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
@@ -32,26 +31,15 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
   })
   declare id: string;
 
-  @ForeignKey(() => Exam)
+  @ForeignKey(() => LanguagePassage)
   @Column({
     type: DataType.UUID,
     allowNull: true,
   })
-  declare exam_id: string | null;
+  declare passage_id: string | null;
 
-  @AllowNull(true)
-  @Column({
-    type: DataType.STRING(64),
-    allowNull: true,
-  })
-  declare section_id: string | null;
-
-  @ForeignKey(() => Category)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-  })
-  declare category_id: string;
+  @BelongsTo(() => LanguagePassage)
+  declare passage: LanguagePassage;
 
   @Column({
     type: DataType.TEXT,
@@ -71,18 +59,11 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
   })
   declare correct_answer: string;
 
-  @AllowNull(true)
   @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
   declare explanation: string | null;
-
-  @BelongsTo(() => Exam)
-  declare exam: Exam;
-
-  @BelongsTo(() => Category)
-  declare category: Category;
 
   declare createdAt: Date;
   declare updatedAt: Date;

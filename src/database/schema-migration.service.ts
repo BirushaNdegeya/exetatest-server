@@ -6,7 +6,6 @@ import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match
 import { DRC_SECTIONS } from '../sections/drc-sections.constants';
 import { Question } from '../models/question.model';
 import { TestYear } from '../models/test-year.model';
-import { SUBJECT_BRANCH_TYPES } from '../subjects/dto/create-subject.dto';
 
 interface LegacyQuestionRow {
   id: string;
@@ -326,7 +325,7 @@ export class SchemaMigrationService implements OnModuleInit {
       await queryInterface.addColumn('subjects', 'branch_type', {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: SUBJECT_BRANCH_TYPES[0],
+        defaultValue: 'Culture Générale',
       });
       this.logger.log('Added subjects.branch_type column');
     }

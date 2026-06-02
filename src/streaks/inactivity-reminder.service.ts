@@ -125,7 +125,7 @@ export class InactivityReminderService
     } catch (err) {
       // Never crash bootstrap/scheduler because reminder query fails.
       // This can happen temporarily if DB schema lags behind code changes.
-        this.logger.error(
+      this.logger.error(
         'Inactivity reminder run skipped due to query/runtime error',
         err instanceof Error ? err.stack : String(err),
       );
