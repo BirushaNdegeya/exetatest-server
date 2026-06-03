@@ -28,8 +28,7 @@ export class AuthController {
 
   // Google OAuth endpoints removed – using email + OTP only
 
-  @Post('request-otp')
-  @Post('otp/send')
+  @Post(['request-otp', 'otp/send'])
   @ApiOperation({ summary: 'Send OTP to user email' })
   @ApiBody({
     schema: {
@@ -56,8 +55,7 @@ export class AuthController {
     return this.authService.sendOTP(email, ipAddress);
   }
 
-  @Post('verify-otp')
-  @Post('otp/verify')
+  @Post(['verify-otp', 'otp/verify'])
   @ApiOperation({ summary: 'Verify OTP and login user' })
   @ApiBody({
     schema: {
