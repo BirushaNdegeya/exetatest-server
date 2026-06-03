@@ -20,7 +20,7 @@ export class SectionsService {
     }
     const id = String(raw).trim();
     if (!this.findById(id)) {
-      throw new BadRequestException('Section introuvable.');
+      throw new BadRequestException('Section introuvable');
     }
     return id;
   }

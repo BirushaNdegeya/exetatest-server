@@ -11,7 +11,6 @@ type UserAuthState = {
   id: string;
   email: string;
   name: string;
-  avatarUrl: string | null;
   hasSelectedSections: boolean;
   isFirstLogin: boolean;
   section_id: string | null;
@@ -81,7 +80,6 @@ export class UsersService {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl,
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: profile.section_id ?? null,
@@ -113,7 +111,6 @@ export class UsersService {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatarUrl: user.avatarUrl,
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
       section_id: updatedProfile.section_id ?? null,

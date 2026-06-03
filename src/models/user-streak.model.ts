@@ -37,34 +37,34 @@ export class UserStreak extends Model<
     allowNull: false,
     unique: true,
   })
-  userId: string;
+  declare userId: string;
 
   @BelongsTo(() => User)
-  user: User;
+  declare user: User;
 
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0,
   })
-  current_streak: number;
+  declare current_streak: number;
 
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0,
   })
-  longest_streak: number;
+  declare longest_streak: number;
 
   @Column({
     type: DataType.DATEONLY,
     allowNull: true,
   })
-  last_activity_date: Date | null;
+  declare last_activity_date: Date | null;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
   })
-  last_inactivity_email_sent_at: Date | null;
+  declare last_inactivity_email_sent_at: Date | null;
 
   declare createdAt: Date;
   declare updatedAt: Date;

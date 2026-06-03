@@ -33,23 +33,23 @@ export class Profile extends Model<Profile, ProfileCreationAttributes> {
     allowNull: false,
     unique: true,
   })
-  userId: string;
+  declare userId: string;
 
   @BelongsTo(() => User)
-  user: User;
+  declare user: User;
 
   /** Legacy display copy; canonical link is section_id (DRC catalog slug). */
   @Column({
     type: DataType.STRING,
     allowNull: true,
   })
-  section: string | null;
+  declare section: string | null;
 
   @Column({
     type: DataType.STRING(64),
     allowNull: true,
   })
-  section_id: string | null;
+  declare section_id: string | null;
 
   declare createdAt: Date;
   declare updatedAt: Date;
