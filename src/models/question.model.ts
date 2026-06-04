@@ -78,6 +78,34 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
   })
   declare explanation: string | null;
 
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare question_type: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare language: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare passage_group: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  declare passage: string | null;
+
   @BelongsTo(() => Exam)
   declare exam: Exam;
 
