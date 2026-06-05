@@ -4,8 +4,26 @@ import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { DataTypes, QueryTypes, Sequelize } from 'sequelize';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
 import { DRC_SECTIONS } from '../sections/drc-sections.constants';
+import { Category } from '../models/category.model';
+import { Exam } from '../models/exam.model';
 import { Question } from '../models/question.model';
 import { TestYear } from '../models/test-year.model';
+
+const DEFAULT_CATEGORIES = [
+  { name: 'Culture generale', is_universal: true },
+  { name: 'Sciences', is_universal: false },
+  { name: "Cours d'options", is_universal: false },
+  { name: 'Langues', is_universal: true },
+] as const;
+
+const BRANCH_TYPE_CATEGORY_NAMES: Record<string, string> = {
+  'culture générale': 'Culture generale',
+  'culture generale': 'Culture generale',
+  sciences: 'Sciences',
+  "cours d'options": "Cours d'options",
+  'cours d options': "Cours d'options",
+  langues: 'Langues',
+};
 
 interface LegacyQuestionRow {
   id: string;
@@ -30,6 +48,10 @@ export class SchemaMigrationService implements OnModuleInit {
     private readonly testYearModel: typeof TestYear,
     @InjectModel(Question)
     private readonly questionModel: typeof Question,
+    @InjectModel(Category)
+    private readonly categoryModel: typeof Category,
+    @InjectModel(Exam)
+    private readonly examModel: typeof Exam,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -48,11 +70,16 @@ export class SchemaMigrationService implements OnModuleInit {
     await this.ensureProfileSectionIdColumn();
     await this.ensureUserStreakInactivityEmailColumn();
     await this.testYearModel.sync();
+    await this.categoryModel.sync();
+    await this.examModel.sync();
+    await this.seedDefaultCategories();
     await this.questionModel.sync();
     await this.removeSubjectIconColumn();
     await this.ensureSubjectBranchTypeColumn();
     await this.ensureQuestionTestYearColumn();
     await this.ensureQuestionMetadataColumns();
+    await this.ensureQuestionsNewSchemaColumns();
+    await this.backfillQuestionsFromLegacySchema();
 
     const runStartupBackfills = this.getBooleanEnv(
       'RUN_STARTUP_BACKFILLS',
@@ -359,6 +386,238 @@ export class SchemaMigrationService implements OnModuleInit {
       });
       this.logger.log('Added questions.passage_group column');
     }
+
+    if (!questionTable.passage) {
+      await queryInterface.addColumn('questions', 'passage', {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      });
+      this.logger.log('Added questions.passage column');
+    }
+  }
+
+  private async seedDefaultCategories(): Promise<void> {
+    for (const category of DEFAULT_CATEGORIES) {
+      await this.categoryModel.findOrCreate({
+        where: { name: category.name },
+        defaults: {
+          name: category.name,
+          is_universal: category.is_universal,
+        },
+      });
+    }
+  }
+
+  private async ensureQuestionsNewSchemaColumns(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let questionTable: Record<string, unknown>;
+    try {
+      questionTable = await queryInterface.describeTable('questions');
+    } catch {
+      this.logger.warn(
+        'questions table not found yet; skip new schema column migration',
+      );
+      return;
+    }
+
+    if (!questionTable.category_id) {
+      await queryInterface.addColumn('questions', 'category_id', {
+        type: DataTypes.UUID,
+        allowNull: true,
+      });
+      this.logger.log('Added questions.category_id column');
+    }
+
+    if (!questionTable.exam_id) {
+      await queryInterface.addColumn('questions', 'exam_id', {
+        type: DataTypes.UUID,
+        allowNull: true,
+      });
+      this.logger.log('Added questions.exam_id column');
+    }
+
+    if (!questionTable.section_id) {
+      await queryInterface.addColumn('questions', 'section_id', {
+        type: DataTypes.STRING(64),
+        allowNull: true,
+      });
+      this.logger.log('Added questions.section_id column');
+    }
+
+    if (!questionTable.text) {
+      await queryInterface.addColumn('questions', 'text', {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      });
+      this.logger.log('Added questions.text column');
+    }
+  }
+
+  private async backfillQuestionsFromLegacySchema(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let questionTable: Record<string, unknown>;
+    try {
+      questionTable = await queryInterface.describeTable('questions');
+    } catch {
+      return;
+    }
+
+    if (!questionTable.category_id) {
+      return;
+    }
+
+    if (questionTable.question_text && questionTable.text) {
+      const [, textBackfillMeta] = await this.sequelize.query(
+        `
+          UPDATE questions
+          SET text = question_text
+          WHERE text IS NULL
+            AND question_text IS NOT NULL
+            AND TRIM(question_text) <> ''
+        `,
+      );
+      const textBackfillCount = this.getAffectedRowCount(textBackfillMeta);
+      if (textBackfillCount > 0) {
+        this.logger.log(
+          `Backfilled questions.text from question_text on ${textBackfillCount} row(s)`,
+        );
+      }
+    }
+
+    if (questionTable.year && questionTable.exam_id) {
+      const years = await this.sequelize.query<{ year: number }>(
+        `
+          SELECT DISTINCT year
+          FROM questions
+          WHERE year IS NOT NULL
+        `,
+        { type: QueryTypes.SELECT },
+      );
+
+      for (const row of years) {
+        await this.examModel.findOrCreate({
+          where: { year: Number(row.year) },
+          defaults: { year: Number(row.year) },
+        });
+      }
+
+      const [, examBackfillMeta] = await this.sequelize.query(
+        `
+          UPDATE questions q
+          SET exam_id = e.id
+          FROM exams e
+          WHERE q.exam_id IS NULL
+            AND q.year IS NOT NULL
+            AND e.year = q.year
+        `,
+      );
+      const examBackfillCount = this.getAffectedRowCount(examBackfillMeta);
+      if (examBackfillCount > 0) {
+        this.logger.log(
+          `Backfilled questions.exam_id on ${examBackfillCount} row(s)`,
+        );
+      }
+    }
+
+    if (!questionTable.subject_id) {
+      return;
+    }
+
+    const categories = await this.categoryModel.findAll();
+    const categoryByName = new Map(
+      categories.map((category) => [category.name, category]),
+    );
+
+    const subjects = await this.sequelize.query<{
+      id: string;
+      branch_type: string;
+      section_id: string | null;
+    }>(
+      `
+        SELECT id, branch_type, section_id
+        FROM subjects
+      `,
+      { type: QueryTypes.SELECT },
+    );
+
+    let categoryBackfillCount = 0;
+    let sectionBackfillCount = 0;
+
+    for (const subject of subjects) {
+      const normalizedBranch = subject.branch_type.trim().toLowerCase();
+      const categoryName = BRANCH_TYPE_CATEGORY_NAMES[normalizedBranch];
+      if (!categoryName) {
+        this.logger.warn(
+          `No category mapping for subject branch_type "${subject.branch_type}" (${subject.id})`,
+        );
+        continue;
+      }
+
+      const category = categoryByName.get(categoryName);
+      if (!category) {
+        continue;
+      }
+
+      const [, categoryMeta] = await this.sequelize.query(
+        `
+          UPDATE questions
+          SET category_id = :categoryId
+          WHERE subject_id = :subjectId
+            AND category_id IS NULL
+        `,
+        {
+          replacements: {
+            categoryId: category.id,
+            subjectId: subject.id,
+          },
+        },
+      );
+      categoryBackfillCount += this.getAffectedRowCount(categoryMeta);
+
+      if (!category.is_universal && subject.section_id) {
+        const [, sectionMeta] = await this.sequelize.query(
+          `
+            UPDATE questions
+            SET section_id = :sectionId
+            WHERE subject_id = :subjectId
+              AND category_id = :categoryId
+              AND section_id IS NULL
+          `,
+          {
+            replacements: {
+              sectionId: subject.section_id,
+              subjectId: subject.id,
+              categoryId: category.id,
+            },
+          },
+        );
+        sectionBackfillCount += this.getAffectedRowCount(sectionMeta);
+      }
+    }
+
+    if (categoryBackfillCount > 0) {
+      this.logger.log(
+        `Backfilled questions.category_id on ${categoryBackfillCount} row(s)`,
+      );
+    }
+    if (sectionBackfillCount > 0) {
+      this.logger.log(
+        `Backfilled questions.section_id on ${sectionBackfillCount} row(s)`,
+      );
+    }
+  }
+
+  private getAffectedRowCount(metadata: unknown): number {
+    if (
+      metadata &&
+      typeof metadata === 'object' &&
+      'rowCount' in metadata &&
+      typeof metadata.rowCount === 'number'
+    ) {
+      return metadata.rowCount;
+    }
+
+    return 0;
   }
 
   private async backfillTestYearsFromLegacyQuestions(): Promise<void> {

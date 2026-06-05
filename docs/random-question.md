@@ -708,4 +708,77 @@ export interface RandomExamSession {
   french?: PassageBlock;
   english?: PassageBlock;
 }
+
+## Admin: Authoring Langues content
+
+Use these admin endpoints to create `language_passages` and linked `language_questions` (preferred storage shape). These endpoints are protected — JWT + admin role required.
+
+Endpoints
+
+- `POST /api/admin/language/passages`
+  - Body: `{ title?: string, content: string, reading_time_minutes?: number, language: 'french'|'english' }`
+  - Response: created passage object
+
+- `POST /api/admin/language/passages/:id/questions`
+  - Create a single question linked to a passage.
+  - Body: `{ text: string, options: string[], correct_answer: 'A'|'B'|'C'|'D'|'E', explanation?: string }`
+
+- `POST /api/admin/language/passages/:id/questions/bulk`
+  - Create multiple questions for the passage in one request. Body is an array of the same question objects.
+
+Quick examples
+
+Create a passage (French):
+
+```http
+POST /api/admin/language/passages
+Authorization: Bearer <ADMIN_JWT>
+
+{
+  "title": "Passage Français",
+  "content": "Mon frère porte un parapluie noir parce que le ciel est couvert...",
+  "reading_time_minutes": 3,
+  "language": "french"
+}
+```
+
+Create questions for the passage:
+
+```http
+POST /api/admin/language/passages/<passage_id>/questions
+Authorization: Bearer <ADMIN_JWT>
+
+{
+  "text": "Pourquoi porte-t-il un parapluie ?",
+  "options": [
+    "A. Parce qu'il fait nuit",
+    "B. Parce que la pluie approche",
+    "C. Parce qu'il fait du sport"
+  ],
+  "correct_answer": "B",
+  "explanation": "Le texte lie le parapluie au ciel couvert."
+}
+```
+
+Bulk create (legacy option — alternative):
+
+If you prefer or already have CSV/legacy rows, reuse the existing admin `POST /api/questions/bulk` endpoint to insert groups of rows where each row contains the same `passage` and `passage_group` values. The backend will fall back to using `questions` with `passage_group` when `language_passages` are absent.
+
+Notes for authors
+
+- Preferred: use `language_passages` + `language_questions` for clean separation.
+- Each passage should have 2–4 sentences and 2–5 questions (aim 3). Mix at least one inference question.
+- `reading_time_minutes` defaults to `3` when omitted.
+
+Testing
+
+Use your admin token — quick curl to confirm both passage and questions exist:
+
+```bash
+curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Passage Français","content":"Texte...","language":"french"}' \
+  "http://localhost:3000/api/admin/language/passages" | jq
+```
+
 ```

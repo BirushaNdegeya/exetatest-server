@@ -17,6 +17,7 @@ import { AdminModule } from './admin/admin.module';
 import { ExamsModule } from './exams/exams.module';
 import { PracticeModule } from './practice/practice.module';
 import { ExamModule } from './exam/exam.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Profile } from './models/profile.model';
@@ -108,6 +109,7 @@ import { LanguageQuestion } from './models/language-question.model';
     AdminModule,
     PracticeModule,
     ExamModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
