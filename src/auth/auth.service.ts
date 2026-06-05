@@ -8,10 +8,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
+import { ConfigService } from '@nestjs/config';
 import { User } from '../models/user.model';
 import { Otp } from '../models/otp.model';
 import { Profile } from '../models/profile.model';
 import { RefreshToken } from '../models/refresh-token.model';
+import { UserRole, UserRoleEnum } from '../models/user-role.model';
 import { JwtPayload } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
 import { createHash, randomBytes } from 'crypto';
@@ -37,6 +39,7 @@ export class AuthService {
   private static readonly OTP_RATE_LIMIT_WINDOW_MINUTES = 10;
 
   constructor(
+    private configService: ConfigService,
     @InjectModel(User)
     private userModel: typeof User,
     @InjectModel(Otp)
@@ -45,6 +48,8 @@ export class AuthService {
     private profileModel: typeof Profile,
     @InjectModel(RefreshToken)
     private refreshTokenModel: typeof RefreshToken,
+    @InjectModel(UserRole)
+    private userRoleModel: typeof UserRole,
     private jwtService: JwtService,
     private emailService: EmailService,
     private streaksService: StreaksService,
@@ -284,6 +289,51 @@ export class AuthService {
 
     // Login user + return access + refresh tokens
     return this.login(user, ipAddress, { notifyLoginEmail: true });
+  }
+
+  async promoteToAdminByEmail(
+    email: string,
+    adminSecret: string,
+  ): Promise<{ message: string }> {
+    const configuredSecret = this.configService.get<string>('ADMIN_SECRET');
+
+    if (!configuredSecret) {
+      throw new HttpException(
+        'Admin secret is not configured on the server. Please set ADMIN_SECRET in .env or the environment.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (adminSecret !== configuredSecret) {
+      throw new UnauthorizedException('Invalid admin secret');
+    }
+
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const user = await this.validateUser(normalizedEmail);
+    if (!user) {
+      throw new NotFoundException('Email not found');
+    }
+
+    const existingAdminRole = await this.userRoleModel.findOne({
+      where: { userId: user.id, role: UserRoleEnum.ADMIN },
+    });
+
+    if (existingAdminRole) {
+      return { message: `User ${normalizedEmail} is already an admin` };
+    }
+
+    await this.userRoleModel.create({
+      userId: user.id,
+      role: UserRoleEnum.ADMIN,
+    });
+
+    return {
+      message: `User ${normalizedEmail} promoted to admin successfully`,
+    };
   }
 
   async refresh(refreshToken: string): Promise<{

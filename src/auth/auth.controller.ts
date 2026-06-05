@@ -20,6 +20,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { MakeAdminDto } from './dto/make-admin.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -105,6 +106,40 @@ export class AuthController {
   ) {
     const ipAddress = req.ip || req.connection.remoteAddress || '0.0.0.0';
     return this.authService.verifyOTP(email, otp, ipAddress);
+  }
+
+  @Post('make-admin')
+  @ApiOperation({
+    summary: 'Promote a user to admin by email using a server secret',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', format: 'email', example: 'user@example.com' },
+        adminSecret: { type: 'string', example: 'your-admin-secret' },
+      },
+      required: ['email', 'adminSecret'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User promoted to admin successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'User user@example.com promoted to admin successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid admin secret' })
+  @ApiResponse({ status: 404, description: 'Email not found' })
+  @ApiResponse({ status: 500, description: 'Admin secret not configured' })
+  async makeAdmin(@Body() dto: MakeAdminDto) {
+    return this.authService.promoteToAdminByEmail(dto.email, dto.adminSecret);
   }
 
   @Post('refresh')
