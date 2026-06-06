@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ProfilesService } from '../profiles/profiles.service';
-import { StreaksService } from '../streaks/streaks.service';
+import { UsersService } from '../users/users.service';
 
 export interface DashboardPageResponse {
   current_streak: number;
@@ -10,15 +9,12 @@ export interface DashboardPageResponse {
 
 @Injectable()
 export class DashboardService {
-  constructor(
-    private readonly profilesService: ProfilesService,
-    private readonly streaksService: StreaksService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   async getDashboardPage(userId: string): Promise<DashboardPageResponse> {
     const [, streak] = await Promise.all([
-      this.profilesService.getProfileByUserId(userId),
-      this.streaksService.getStreakByUserId(userId),
+      this.usersService.getProfileByUserId(userId),
+      this.usersService.getStreakByUserId(userId),
     ]);
 
     return {

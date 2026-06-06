@@ -66,9 +66,8 @@ export class SchemaMigrationService implements OnModuleInit {
       return;
     }
 
+    await this.consolidateUserRelatedTables();
     await this.migrateSectionsTableToStaticCatalog();
-    await this.ensureProfileSectionIdColumn();
-    await this.ensureUserStreakInactivityEmailColumn();
     await this.testYearModel.sync();
     await this.categoryModel.sync();
     await this.examModel.sync();
@@ -95,7 +94,7 @@ export class SchemaMigrationService implements OnModuleInit {
       return;
     }
 
-    await this.backfillProfilesLegacySectionTextToIds();
+    await this.backfillUsersLegacySectionTextToIds();
     await this.backfillTestYearsFromLegacyQuestions();
   }
 
@@ -106,6 +105,141 @@ export class SchemaMigrationService implements OnModuleInit {
     }
 
     return value === 'true';
+  }
+
+  /**
+   * Merges profiles, user_roles, and user_streaks into the users table, then drops legacy tables.
+   */
+  private async consolidateUserRelatedTables(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+
+    try {
+      const userTable = await queryInterface.describeTable('users');
+
+      const addColumnIfMissing = async (
+        column: string,
+        definition: Parameters<typeof queryInterface.addColumn>[2],
+      ): Promise<void> => {
+        if (!userTable[column]) {
+          await queryInterface.addColumn('users', column, definition);
+          this.logger.log(`Added users.${column} column`);
+        }
+      };
+
+      await addColumnIfMissing('pays', {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      });
+      await addColumnIfMissing('province', {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      });
+      await addColumnIfMissing('role', {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'user',
+      });
+      await addColumnIfMissing('section', {
+        type: DataTypes.STRING,
+        allowNull: true,
+      });
+      await addColumnIfMissing('section_id', {
+        type: DataTypes.STRING(64),
+        allowNull: true,
+      });
+      await addColumnIfMissing('current_streak', {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      });
+      await addColumnIfMissing('longest_streak', {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      });
+      await addColumnIfMissing('last_activity_date', {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      });
+      await addColumnIfMissing('last_inactivity_email_sent_at', {
+        type: DataTypes.DATE,
+        allowNull: true,
+      });
+
+      let profilesTable: Record<string, unknown> | null = null;
+      try {
+        profilesTable = await queryInterface.describeTable('profiles');
+      } catch {
+        profilesTable = null;
+      }
+
+      if (profilesTable) {
+        await this.sequelize.query(`
+          UPDATE users u
+          SET
+            section_id = COALESCE(u.section_id, p.section_id),
+            section = COALESCE(u.section, p.section)
+          FROM profiles p
+          WHERE p."userId" = u.id
+        `);
+        this.logger.log('Migrated profile section fields into users');
+      }
+
+      let userRolesTable: Record<string, unknown> | null = null;
+      try {
+        userRolesTable = await queryInterface.describeTable('user_roles');
+      } catch {
+        userRolesTable = null;
+      }
+
+      if (userRolesTable) {
+        await this.sequelize.query(`
+          UPDATE users u
+          SET role = 'admin'
+          FROM user_roles ur
+          WHERE ur."userId" = u.id
+            AND ur.role = 'admin'
+        `);
+        this.logger.log('Migrated admin roles into users.role');
+      }
+
+      let userStreaksTable: Record<string, unknown> | null = null;
+      try {
+        userStreaksTable = await queryInterface.describeTable('user_streaks');
+      } catch {
+        userStreaksTable = null;
+      }
+
+      if (userStreaksTable) {
+        await this.sequelize.query(`
+          UPDATE users u
+          SET
+            current_streak = COALESCE(us.current_streak, u.current_streak, 0),
+            longest_streak = COALESCE(us.longest_streak, u.longest_streak, 0),
+            last_activity_date = COALESCE(us.last_activity_date, u.last_activity_date),
+            last_inactivity_email_sent_at = COALESCE(
+              us.last_inactivity_email_sent_at,
+              u.last_inactivity_email_sent_at
+            )
+          FROM user_streaks us
+          WHERE us."userId" = u.id
+        `);
+        this.logger.log('Migrated streak fields into users');
+      }
+
+      for (const legacyTable of ['profiles', 'user_roles', 'user_streaks']) {
+        try {
+          await queryInterface.dropTable(legacyTable);
+          this.logger.log(`Dropped legacy table ${legacyTable}`);
+        } catch {
+          // Table may already be absent.
+        }
+      }
+    } catch (e) {
+      this.logger.warn(
+        `consolidateUserRelatedTables skipped: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
   }
 
   /**
@@ -152,7 +286,7 @@ export class SchemaMigrationService implements OnModuleInit {
           { replacements: { slug: match.id, oldId: row.id } },
         );
         await this.sequelize.query(
-          `UPDATE profiles SET section_id = :slug, section = :title WHERE section_id::text = :oldId`,
+          `UPDATE users SET section_id = :slug, section = :title WHERE section_id::text = :oldId`,
           {
             replacements: {
               slug: match.id,
@@ -180,7 +314,6 @@ export class SchemaMigrationService implements OnModuleInit {
     queryInterface: ReturnType<Sequelize['getQueryInterface']>,
   ): Promise<void> {
     const constraints: Array<{ table: string; name: string }> = [
-      { table: 'profiles', name: 'profiles_section_id_fkey' },
       { table: 'subjects', name: 'subjects_section_id_fkey' },
     ];
 
@@ -196,7 +329,7 @@ export class SchemaMigrationService implements OnModuleInit {
   private async ensureSectionIdColumnsAreStringSlugs(): Promise<void> {
     const queryInterface = this.sequelize.getQueryInterface();
 
-    for (const table of ['profiles', 'subjects'] as const) {
+    for (const table of ['users', 'subjects'] as const) {
       try {
         const described = await queryInterface.describeTable(table);
         const column = described.section_id;
@@ -211,7 +344,7 @@ export class SchemaMigrationService implements OnModuleInit {
 
         await queryInterface.changeColumn(table, 'section_id', {
           type: DataTypes.STRING(64),
-          allowNull: table === 'profiles',
+          allowNull: true,
         });
         this.logger.log(`Converted ${table}.section_id to VARCHAR(64) slug`);
       } catch (e) {
@@ -222,90 +355,33 @@ export class SchemaMigrationService implements OnModuleInit {
     }
   }
 
-  /**
-   * Ensures `profiles.section_id` exists as a string slug (no FK).
-   */
-  private async ensureProfileSectionIdColumn(): Promise<void> {
-    const queryInterface = this.sequelize.getQueryInterface();
-    let profileTable: Record<string, unknown>;
-    try {
-      profileTable = await queryInterface.describeTable('profiles');
-    } catch {
-      this.logger.warn(
-        'profiles table not found yet; skip section_id migration',
-      );
-      return;
-    }
-
-    if (profileTable.section_id) {
-      return;
-    }
-
-    await queryInterface.addColumn('profiles', 'section_id', {
-      type: DataTypes.STRING(64),
-      allowNull: true,
-    });
-    this.logger.log('Added profiles.section_id column (DRC catalog slug)');
-  }
-
-  /**
-   * Ensures `user_streaks.last_inactivity_email_sent_at` exists to prevent
-   * duplicate inactivity reminders.
-   */
-  private async ensureUserStreakInactivityEmailColumn(): Promise<void> {
-    const queryInterface = this.sequelize.getQueryInterface();
-    let streakTable: Record<string, unknown>;
-    try {
-      streakTable = await queryInterface.describeTable('user_streaks');
-    } catch {
-      this.logger.warn(
-        'user_streaks table not found yet; skip inactivity email column migration',
-      );
-      return;
-    }
-
-    if (streakTable.last_inactivity_email_sent_at) {
-      return;
-    }
-
-    await queryInterface.addColumn(
-      'user_streaks',
-      'last_inactivity_email_sent_at',
-      {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-    );
-    this.logger.log('Added user_streaks.last_inactivity_email_sent_at column');
-  }
-
-  /** Links profiles.section_id from legacy profiles.section when labels match the catalog. */
-  private async backfillProfilesLegacySectionTextToIds(): Promise<void> {
+  /** Links users.section_id from legacy users.section when labels match the catalog. */
+  private async backfillUsersLegacySectionTextToIds(): Promise<void> {
     try {
       const catalog = DRC_SECTIONS.map((section) => ({
         id: section.id,
         title: section.title,
       }));
 
-      const profiles = await this.sequelize.query<{
+      const users = await this.sequelize.query<{
         id: string;
         section: string;
       }>(
-        `SELECT id, section FROM profiles WHERE section_id IS NULL AND section IS NOT NULL AND TRIM(section) <> ''`,
+        `SELECT id, section FROM users WHERE section_id IS NULL AND section IS NOT NULL AND TRIM(section) <> ''`,
         { type: QueryTypes.SELECT },
       );
 
       let updated = 0;
-      for (const profile of profiles) {
-        const match = findSectionMatchingLegacyLabel(profile.section, catalog);
+      for (const user of users) {
+        const match = findSectionMatchingLegacyLabel(user.section, catalog);
         if (match) {
           await this.sequelize.query(
-            `UPDATE profiles SET section_id = :sid, section = :stitle WHERE id = :pid`,
+            `UPDATE users SET section_id = :sid, section = :stitle WHERE id = :uid`,
             {
               replacements: {
                 sid: match.id,
                 stitle: match.title,
-                pid: profile.id,
+                uid: user.id,
               },
             },
           );
@@ -314,12 +390,12 @@ export class SchemaMigrationService implements OnModuleInit {
       }
       if (updated > 0) {
         this.logger.log(
-          `Backfilled section_id on ${updated} profile row(s) from legacy section text`,
+          `Backfilled section_id on ${updated} user row(s) from legacy section text`,
         );
       }
     } catch (e) {
       this.logger.warn(
-        `backfillProfilesLegacySectionTextToIds skipped: ${e instanceof Error ? e.message : String(e)}`,
+        `backfillUsersLegacySectionTextToIds skipped: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }

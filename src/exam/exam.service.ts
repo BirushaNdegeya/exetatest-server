@@ -10,7 +10,7 @@ import { Exam } from '../models/exam.model';
 import { LanguagePassage } from '../models/language-passage.model';
 import { LanguageQuestion } from '../models/language-question.model';
 import { Question } from '../models/question.model';
-import { ProfilesService } from '../profiles/profiles.service';
+import { UsersService } from '../users/users.service';
 import {
   EXAM_CATEGORY_CODE_LABELS,
   EXAM_CATEGORY_DEFAULT_LIMITS,
@@ -47,7 +47,7 @@ export class ExamService {
     private readonly languageQuestionModel: typeof LanguageQuestion,
     @InjectConnection()
     private readonly sequelize: Sequelize,
-    private readonly profilesService: ProfilesService,
+    private readonly usersService: UsersService,
   ) {}
 
   async getRandomExam(
@@ -310,10 +310,10 @@ export class ExamService {
       return null;
     }
 
-    const profile = await this.profilesService.getProfileByUserId(userId);
+    const profile = await this.usersService.getProfileByUserId(userId);
     if (!profile.section_id) {
       throw new BadRequestException(
-        'section_id est requis pour cette categorie. Mettez a jour le profil avec PATCH /profiles/me.',
+        'section_id est requis pour cette categorie. Mettez a jour le profil avec PATCH /users/me/profile.',
       );
     }
 

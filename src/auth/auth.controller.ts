@@ -86,12 +86,6 @@ export class AuthController {
             section_id: { type: 'string', nullable: true },
             current_streak: { type: 'number', example: 4 },
             longest_streak: { type: 'number', example: 9 },
-            last_activity_date: {
-              type: 'string',
-              format: 'date',
-              nullable: true,
-              example: '2026-06-02',
-            },
           },
         },
       },

@@ -1,11 +1,9 @@
 import 'dotenv/config';
 import { Sequelize } from 'sequelize-typescript';
-import { User } from '../src/models/user.model';
-import { UserRole, UserRoleEnum } from '../src/models/user-role.model';
+import { User, UserRoleEnum } from '../src/models/user.model';
 
 async function main() {
-  const email = process.argv[2]?.trim() || 'birushandegeya@gmail.com';
-  const name = email.split('@')[0] || 'Utilisateur';
+  const email = process.argv[2]?.trim();
 
   const sequelize = new Sequelize({
     dialect: 'postgres',
@@ -14,7 +12,7 @@ async function main() {
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    models: [User, UserRole],
+    models: [User],
     dialectOptions: {
       ssl: {
         require: true,
@@ -26,15 +24,19 @@ async function main() {
 
   await sequelize.authenticate();
 
-  const [user] = await User.findOrCreate({
+  const [user, created] = await User.findOrCreate({
     where: { email },
-    defaults: { email, name },
+    defaults: {
+      email,
+      role: UserRoleEnum.ADMIN,
+      current_streak: 0,
+      longest_streak: 0,
+    },
   });
 
-  await UserRole.findOrCreate({
-    where: { userId: user.id, role: UserRoleEnum.ADMIN },
-    defaults: { userId: user.id, role: UserRoleEnum.ADMIN },
-  });
+  if (!created && user.role !== UserRoleEnum.ADMIN) {
+    await user.update({ role: UserRoleEnum.ADMIN });
+  }
 
   // eslint-disable-next-line no-console
   console.log(`OK: ${email} est maintenant admin (userId=${user.id}).`);
@@ -47,4 +49,3 @@ main().catch(async (err) => {
   console.error('Erreur:', err);
   process.exitCode = 1;
 });
-

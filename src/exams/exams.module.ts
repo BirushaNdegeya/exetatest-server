@@ -3,12 +3,11 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { Question } from '../models/question.model';
 import { Exam } from '../models/exam.model';
 import { User } from '../models/user.model';
-import { UserRole } from '../models/user-role.model';
 import { ExamsController } from './exams.controller';
 import { ExamsService } from './exams.service';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Exam, Question, UserRole, User])],
+  imports: [SequelizeModule.forFeature([Exam, Question, User])],
   providers: [ExamsService],
   controllers: [ExamsController],
   exports: [ExamsService],

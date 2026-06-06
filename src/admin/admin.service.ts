@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Question } from '../models/question.model';
-import { User } from '../models/user.model';
-import { UserRole } from '../models/user-role.model';
+import { User, UserRoleEnum } from '../models/user.model';
 import { DRC_SECTIONS } from '../sections/drc-sections.constants';
 
 @Injectable()
@@ -12,8 +11,6 @@ export class AdminService {
     private questionModel: typeof Question,
     @InjectModel(User)
     private userModel: typeof User,
-    @InjectModel(UserRole)
-    private userRoleModel: typeof UserRole,
   ) {}
 
   async getStats(): Promise<{
@@ -21,21 +18,20 @@ export class AdminService {
     totalSections: number;
     totalUsers: number;
     totalAdmins: number;
-    adminList: { user_id: string; display_name: string }[];
+    adminList: { user_id: string; email: string }[];
   }> {
     const totalQuestions = await this.questionModel.count();
     const totalSections = DRC_SECTIONS.length;
     const totalUsers = await this.userModel.count();
 
-    const adminRoles = await this.userRoleModel.findAll({
-      where: { role: 'admin' },
-      include: [User],
+    const admins = await this.userModel.findAll({
+      where: { role: UserRoleEnum.ADMIN },
     });
 
-    const totalAdmins = adminRoles.length;
-    const adminList = adminRoles.map((role) => ({
-      user_id: role.userId,
-      display_name: role.user.name,
+    const totalAdmins = admins.length;
+    const adminList = admins.map((admin) => ({
+      user_id: admin.id,
+      email: admin.email,
     }));
 
     return {

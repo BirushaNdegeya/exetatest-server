@@ -5,23 +5,21 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../models/user.model';
 import { Otp } from '../models/otp.model';
-import { Profile } from '../models/profile.model';
 import { RefreshToken } from '../models/refresh-token.model';
-import { UserRole } from '../models/user-role.model';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { EmailModule } from '../email/email.module';
 import { OtpCleanupService } from './otp-cleanup.service';
-import { StreaksModule } from '../streaks/streaks.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     ConfigModule,
-    SequelizeModule.forFeature([User, Otp, Profile, RefreshToken, UserRole]),
+    SequelizeModule.forFeature([User, Otp, RefreshToken]),
     PassportModule,
     EmailModule,
-    StreaksModule,
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

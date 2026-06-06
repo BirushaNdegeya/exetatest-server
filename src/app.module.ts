@@ -7,11 +7,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
-import { ProfilesModule } from './profiles/profiles.module';
 import { SectionsModule } from './sections/sections.module';
 import { CategoriesModule } from './categories/categories.module';
 import { QuestionsModule } from './questions/questions.module';
-import { StreaksModule } from './streaks/streaks.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { ExamsModule } from './exams/exams.module';
@@ -20,14 +18,11 @@ import { ExamModule } from './exam/exam.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
-import { Profile } from './models/profile.model';
-import { UserRole } from './models/user-role.model';
 import { Otp } from './models/otp.model';
 import { RefreshToken } from './models/refresh-token.model';
 import { Subject } from './models/subject.model';
 import { TestYear } from './models/test-year.model';
 import { Question } from './models/question.model';
-import { UserStreak } from './models/user-streak.model';
 import { Category } from './models/category.model';
 import { Exam } from './models/exam.model';
 import { LanguagePassage } from './models/language-passage.model';
@@ -43,8 +38,8 @@ import { LanguageQuestion } from './models/language-question.model';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => [
         {
-          ttl: configService.get<number>('THROTTLE_TTL', 60000), // 1 minute
-          limit: configService.get<number>('THROTTLE_LIMIT', 100), // 100 requests per minute
+          ttl: configService.get<number>('THROTTLE_TTL', 60000),
+          limit: configService.get<number>('THROTTLE_LIMIT', 100),
         },
       ],
       inject: [ConfigService],
@@ -84,8 +79,6 @@ import { LanguageQuestion } from './models/language-question.model';
     }),
     SequelizeModule.forFeature([
       User,
-      Profile,
-      UserRole,
       Otp,
       RefreshToken,
       Subject,
@@ -95,16 +88,13 @@ import { LanguageQuestion } from './models/language-question.model';
       Exam,
       LanguagePassage,
       LanguageQuestion,
-      UserStreak,
     ]),
     EmailModule,
     AuthModule,
-    ProfilesModule,
     SectionsModule,
     CategoriesModule,
     ExamsModule,
     QuestionsModule,
-    StreaksModule,
     UsersModule,
     AdminModule,
     PracticeModule,

@@ -9,16 +9,14 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../models/user.model';
+import { User, UserRoleEnum } from '../models/user.model';
 import { Otp } from '../models/otp.model';
-import { Profile } from '../models/profile.model';
 import { RefreshToken } from '../models/refresh-token.model';
-import { UserRole, UserRoleEnum } from '../models/user-role.model';
 import { JwtPayload } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
 import { createHash, randomBytes } from 'crypto';
 import { Op } from 'sequelize';
-import { StreaksService } from '../streaks/streaks.service';
+import { UsersService } from '../users/users.service';
 
 type UserAuthState = {
   id: string;
@@ -28,7 +26,6 @@ type UserAuthState = {
   section_id: string | null;
   current_streak: number;
   longest_streak: number;
-  last_activity_date: Date | null;
 };
 
 @Injectable()
@@ -44,26 +41,28 @@ export class AuthService {
     private userModel: typeof User,
     @InjectModel(Otp)
     private otpModel: typeof Otp,
-    @InjectModel(Profile)
-    private profileModel: typeof Profile,
     @InjectModel(RefreshToken)
     private refreshTokenModel: typeof RefreshToken,
-    @InjectModel(UserRole)
-    private userRoleModel: typeof UserRole,
     private jwtService: JwtService,
     private emailService: EmailService,
-    private streaksService: StreaksService,
+    private usersService: UsersService,
   ) {}
 
   async validateUser(email: string): Promise<User | null> {
     return this.userModel.findOne({ where: { email } });
   }
 
-  async createUser(email: string, name: string): Promise<User> {
+  async createUser(email: string): Promise<User> {
     return this.userModel.create({
       email,
-      name,
+      role: UserRoleEnum.USER,
+      current_streak: 0,
+      longest_streak: 0,
     });
+  }
+
+  private displayNameFromEmail(email: string): string {
+    return email.split('@')[0] || 'Utilisateur';
   }
 
   async generateJwtToken(user: User): Promise<string> {
@@ -76,7 +75,6 @@ export class AuthService {
   }
 
   private generateRefreshTokenRaw(): string {
-    // 64 bytes => 128 hex chars; good enough for a refresh token.
     return randomBytes(64).toString('hex');
   }
 
@@ -98,24 +96,17 @@ export class AuthService {
   }
 
   private async getUserAuthState(user: User): Promise<UserAuthState> {
-    const [profile, streak] = await Promise.all([
-      this.profileModel.findOne({
-        where: { userId: user.id },
-      }),
-      this.streaksService.updateStreak(user.id),
-    ]);
-
-    const hasSelectedSections = Boolean(profile?.section_id);
+    const streak = await this.usersService.updateStreak(user.id);
+    const hasSelectedSections = Boolean(user.section_id);
 
     return {
       id: user.id,
       email: user.email,
       hasSelectedSections,
       isFirstLogin: !hasSelectedSections,
-      section_id: profile?.section_id ?? null,
+      section_id: user.section_id ?? null,
       current_streak: streak.current_streak ?? 0,
       longest_streak: streak.longest_streak ?? 0,
-      last_activity_date: streak.last_activity_date ?? null,
     };
   }
 
@@ -127,17 +118,15 @@ export class AuthService {
     const accessToken = await this.generateJwtToken(user);
     const refreshToken = await this.createRefreshToken(user);
 
-    // Send login notification email
     if (options?.notifyLoginEmail ?? true) {
       try {
         await this.emailService.sendLoginNotification(
           user.email,
-          user.name,
+          this.displayNameFromEmail(user.email),
           ipAddress,
           new Date(),
         );
       } catch (error) {
-        // Log error but don't fail the login
         console.error('Failed to send login notification email:', error);
       }
     }
@@ -147,8 +136,8 @@ export class AuthService {
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
-      accessToken, // compatibility for clients using camelCase
-      refreshToken, // compatibility for clients using camelCase
+      accessToken,
+      refreshToken,
       user: userState,
     };
   }
@@ -168,17 +157,10 @@ export class AuthService {
     );
   }
 
-  /**
-   * Generate a 6-digit OTP
-   */
   private generateOTP(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  /**
-   * Send OTP to user's email
-   * Throws NotFoundException if email doesn't exist
-   */
   async sendOTP(
     email: string,
     ipAddress: string = '0.0.0.0',
@@ -189,15 +171,12 @@ export class AuthService {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Create user automatically when they request an OTP for the first time
     let user = await this.validateUser(normalizedEmail);
 
     if (!user) {
-      const defaultName = normalizedEmail.split('@')[0];
-      user = await this.createUser(normalizedEmail, defaultName);
+      user = await this.createUser(normalizedEmail);
     }
 
-    // Rate limiting: max 3 OTP requests per user/email within 10 minutes.
     const windowStart = new Date();
     windowStart.setMinutes(
       windowStart.getMinutes() - AuthService.OTP_RATE_LIMIT_WINDOW_MINUTES,
@@ -223,7 +202,6 @@ export class AuthService {
 
     const codeHash = this.hashSha256(otp);
 
-    // Store OTP hash + expiry in DB (single-use via isVerified).
     await this.otpModel.create({
       userId: user.id,
       code: codeHash,
@@ -231,11 +209,10 @@ export class AuthService {
       isVerified: false,
     });
 
-    // Send OTP via email (includes IP + timestamp for context)
     try {
       await this.emailService.sendOTP(
         normalizedEmail,
-        user.name,
+        this.displayNameFromEmail(user.email),
         otp,
         ipAddress,
         new Date(),
@@ -248,9 +225,6 @@ export class AuthService {
     return { message: 'OTP envoyé avec succès' };
   }
 
-  /**
-   * Verify OTP and login user
-   */
   async verifyOTP(email: string, otp: string, ipAddress: string = '0.0.0.0') {
     const normalizedEmail = email?.trim().toLowerCase();
     const user = await this.validateUser(normalizedEmail);
@@ -281,13 +255,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
 
-    // Mark as verified (single-use); cleanup job will delete expired/verified rows.
     await otpRow.update({ isVerified: true });
 
-    // Clear legacy fields for backward compatibility
-    await user.update({ otp: null, otpExpiry: null });
-
-    // Login user + return access + refresh tokens
     return this.login(user, ipAddress, { notifyLoginEmail: true });
   }
 
@@ -318,18 +287,11 @@ export class AuthService {
       throw new NotFoundException('Email not found');
     }
 
-    const existingAdminRole = await this.userRoleModel.findOne({
-      where: { userId: user.id, role: UserRoleEnum.ADMIN },
-    });
-
-    if (existingAdminRole) {
+    if (user.role === UserRoleEnum.ADMIN) {
       return { message: `User ${normalizedEmail} is already an admin` };
     }
 
-    await this.userRoleModel.create({
-      userId: user.id,
-      role: UserRoleEnum.ADMIN,
-    });
+    await this.usersService.promoteToAdmin(user.id);
 
     return {
       message: `User ${normalizedEmail} promoted to admin successfully`,
@@ -368,7 +330,6 @@ export class AuthService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    // Refresh token rotation: invalidate old token and issue a new one
     await tokenRow.update({ revokedAt: now });
 
     const accessToken = await this.generateJwtToken(user);

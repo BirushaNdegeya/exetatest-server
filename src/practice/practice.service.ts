@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ProfilesService } from '../profiles/profiles.service';
+import { UsersService } from '../users/users.service';
 import { SectionsService } from '../sections/sections.service';
-import { StreaksService } from '../streaks/streaks.service';
 import { CategoriesService } from '../categories/categories.service';
 import { ExamsService } from '../exams/exams.service';
-import { ProfileResponseDto } from '../profiles/dto/profile-response.dto';
+import { ProfileResponseDto } from '../users/dto/profile-response.dto';
 import { DrcSection } from '../sections/drc-sections.constants';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
 
@@ -31,7 +30,6 @@ export interface PracticePageResponse {
   streak: {
     current_streak: number;
     longest_streak: number;
-    last_activity_date: Date | null;
   };
   selected_section_id: string | null;
   categories: PracticeCategoryRow[];
@@ -40,18 +38,17 @@ export interface PracticePageResponse {
 @Injectable()
 export class PracticeService {
   constructor(
-    private readonly profilesService: ProfilesService,
+    private readonly usersService: UsersService,
     private readonly sectionsService: SectionsService,
-    private readonly streaksService: StreaksService,
     private readonly categoriesService: CategoriesService,
     private readonly examsService: ExamsService,
   ) {}
 
   async getPracticePage(userId: string): Promise<PracticePageResponse> {
     const [profile, sectionEntities, streakEntity] = await Promise.all([
-      this.profilesService.getProfileByUserId(userId),
+      this.usersService.getProfileByUserId(userId),
       Promise.resolve(this.sectionsService.getAllSections()),
-      this.streaksService.getStreakByUserId(userId),
+      this.usersService.getStreakByUserId(userId),
     ]);
 
     const sections = sectionEntities.map((s) => ({
@@ -66,7 +63,7 @@ export class PracticeService {
         sectionEntities,
       );
       if (legacyMatch) {
-        await this.profilesService.persistMatchedLegacySection(
+        await this.usersService.persistMatchedLegacySection(
           userId,
           legacyMatch.id,
           legacyMatch.title,
@@ -86,7 +83,6 @@ export class PracticeService {
     const streak = {
       current_streak: streakEntity.current_streak ?? 0,
       longest_streak: streakEntity.longest_streak ?? 0,
-      last_activity_date: streakEntity.last_activity_date ?? null,
     };
 
     if (!matchingSection) {

@@ -2,18 +2,12 @@ import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { UserRole } from '../models/user-role.model';
 import { User } from '../models/user.model';
-import { ProfilesModule } from '../profiles/profiles.module';
 import { UserAuthController } from './user-auth.controller';
-import { StreaksModule } from '../streaks/streaks.module';
+import { SectionsModule } from '../sections/sections.module';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([UserRole, User]),
-    ProfilesModule,
-    StreaksModule,
-  ],
+  imports: [SequelizeModule.forFeature([User]), SectionsModule],
   providers: [UsersService],
   controllers: [UsersController, UserAuthController],
   exports: [UsersService],

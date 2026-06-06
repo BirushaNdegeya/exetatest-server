@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, ValidateIf } from 'class-validator';
 
-/** Body for PATCH /api/v1/profiles/me — all fields optional; omit keys you do not want to change. */
+/** Body for PATCH /users/me/profile — all fields optional; omit keys you do not want to change. */
 export class UpdateProfileDto {
   @ApiPropertyOptional({
     description:

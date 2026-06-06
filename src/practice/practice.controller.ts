@@ -36,7 +36,6 @@ export class PracticeController {
         streak: {
           current_streak: 3,
           longest_streak: 10,
-          last_activity_date: '2026-04-03',
         },
         selected_section_id: '…',
         categories: [
