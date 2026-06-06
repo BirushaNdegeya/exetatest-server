@@ -21,6 +21,14 @@ type CreateQuestionPayload = {
 
 type UpdateQuestionPayload = Partial<CreateQuestionPayload>;
 
+const ANSWER_INDEX_TO_LETTER: Record<string, string> = {
+  '1': 'A',
+  '2': 'B',
+  '3': 'C',
+  '4': 'D',
+  '5': 'E',
+};
+
 @Injectable()
 export class QuestionsService {
   constructor(
@@ -86,7 +94,7 @@ export class QuestionsService {
     });
 
     return {
-      data: rows,
+      data: rows.map((question) => this.normalizeQuestion(question)),
       meta: {
         total: count,
         page: normalizedPage,
@@ -111,7 +119,10 @@ export class QuestionsService {
       1,
     );
     const normalizedLimit = Number(limit) > 0 ? Number(limit) : 7;
-    return data.sort(() => 0.5 - Math.random()).slice(0, normalizedLimit);
+    return data
+      .map((question) => this.normalizeQuestion(question))
+      .sort(() => 0.5 - Math.random())
+      .slice(0, normalizedLimit);
   }
 
   async getQuestionById(id: string): Promise<Question> {
@@ -121,7 +132,7 @@ export class QuestionsService {
     if (!question) {
       throw new NotFoundException('Question introuvable');
     }
-    return question;
+    return this.normalizeQuestion(question);
   }
 
   async createQuestion(data: CreateQuestionPayload): Promise<Question> {
@@ -129,7 +140,8 @@ export class QuestionsService {
     if (data.exam_id) {
       await this.ensureExamExists(data.exam_id);
     }
-    return this.questionModel.create(data);
+    const question = await this.questionModel.create(data);
+    return this.normalizeQuestion(question);
   }
 
   async createBulkQuestions(
@@ -141,7 +153,8 @@ export class QuestionsService {
         await this.ensureExamExists(item.exam_id);
       }
     }
-    return this.questionModel.bulkCreate(data);
+    const questions = await this.questionModel.bulkCreate(data);
+    return questions.map((question) => this.normalizeQuestion(question));
   }
 
   async updateQuestion(
@@ -157,7 +170,7 @@ export class QuestionsService {
       await this.ensureExamExists(data.exam_id);
     }
     await question.update(data);
-    return question;
+    return this.normalizeQuestion(question);
   }
 
   async deleteQuestion(id: string): Promise<void> {
@@ -179,6 +192,22 @@ export class QuestionsService {
       throw new NotFoundException('Examen introuvable');
     }
     return exam;
+  }
+
+  private normalizeQuestion(question: Question): Question {
+    const letter = this.toAnswerLetter(question.correct_answer);
+    if (letter !== question.correct_answer) {
+      question.setDataValue('correct_answer', letter);
+    }
+    return question;
+  }
+
+  private toAnswerLetter(value: string | number): string {
+    const normalized = String(value).trim().toUpperCase();
+    if (/^[A-E]$/.test(normalized)) {
+      return normalized;
+    }
+    return ANSWER_INDEX_TO_LETTER[normalized] ?? normalized;
   }
 
   private async validateQuestionScope(

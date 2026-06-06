@@ -1,5 +1,7 @@
 import {
   AllowNull,
+  BeforeCreate,
+  BeforeUpdate,
   BelongsTo,
   Column,
   DataType,
@@ -59,6 +61,14 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
   })
   declare text: string;
 
+  @AllowNull(true)
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    field: 'question_text',
+  })
+  declare question_text: string | null;
+
   @Column({
     type: DataType.JSONB,
     allowNull: false,
@@ -114,4 +124,13 @@ export class Question extends Model<Question, QuestionCreationAttributes> {
 
   declare createdAt: Date;
   declare updatedAt: Date;
+
+  @BeforeCreate
+  @BeforeUpdate
+  static mirrorTextToLegacyQuestionText(instance: Question): void {
+    const text = instance.getDataValue('text');
+    if (text) {
+      instance.setDataValue('question_text', text);
+    }
+  }
 }

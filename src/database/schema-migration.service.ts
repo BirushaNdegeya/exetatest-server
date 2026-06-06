@@ -73,12 +73,15 @@ export class SchemaMigrationService implements OnModuleInit {
     await this.categoryModel.sync();
     await this.examModel.sync();
     await this.seedDefaultCategories();
+    await this.ensureCorrectAnswerColumnUsesLetters('questions');
+    await this.ensureCorrectAnswerColumnUsesLetters('language_questions');
     await this.questionModel.sync();
     await this.removeSubjectIconColumn();
     await this.ensureSubjectBranchTypeColumn();
     await this.ensureQuestionTestYearColumn();
     await this.ensureQuestionMetadataColumns();
     await this.ensureQuestionsNewSchemaColumns();
+    await this.relaxLegacyQuestionColumns();
     await this.backfillQuestionsFromLegacySchema();
 
     const runStartupBackfills = this.getBooleanEnv(
@@ -408,6 +411,94 @@ export class SchemaMigrationService implements OnModuleInit {
     }
   }
 
+  private async ensureCorrectAnswerColumnUsesLetters(
+    tableName: 'questions' | 'language_questions',
+  ): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let table: Record<string, { type?: string }>;
+    try {
+      table = (await queryInterface.describeTable(tableName)) as Record<
+        string,
+        { type?: string }
+      >;
+    } catch {
+      return;
+    }
+
+    const column = table.correct_answer;
+    if (!column) {
+      return;
+    }
+
+    const columnType = String(column.type ?? '').toLowerCase();
+    const isIntegerColumn =
+      columnType.includes('int') && !columnType.includes('point');
+
+    try {
+      if (isIntegerColumn) {
+        await queryInterface.addColumn(tableName, 'correct_answer_letter', {
+          type: DataTypes.STRING(1),
+          allowNull: true,
+        });
+
+        await this.sequelize.query(
+          `
+            UPDATE ${tableName}
+            SET correct_answer_letter = CASE correct_answer
+              WHEN 1 THEN 'A'
+              WHEN 2 THEN 'B'
+              WHEN 3 THEN 'C'
+              WHEN 4 THEN 'D'
+              WHEN 5 THEN 'E'
+              ELSE 'A'
+            END
+          `,
+        );
+
+        await queryInterface.removeColumn(tableName, 'correct_answer');
+        await queryInterface.renameColumn(
+          tableName,
+          'correct_answer_letter',
+          'correct_answer',
+        );
+        await queryInterface.changeColumn(tableName, 'correct_answer', {
+          type: DataTypes.STRING(1),
+          allowNull: false,
+        });
+
+        this.logger.log(
+          `Migrated ${tableName}.correct_answer from INTEGER index to letter (A-E)`,
+        );
+        return;
+      }
+
+      const [, meta] = await this.sequelize.query(
+        `
+          UPDATE ${tableName}
+          SET correct_answer = CASE correct_answer
+            WHEN '1' THEN 'A'
+            WHEN '2' THEN 'B'
+            WHEN '3' THEN 'C'
+            WHEN '4' THEN 'D'
+            WHEN '5' THEN 'E'
+            ELSE correct_answer
+          END
+          WHERE correct_answer IN ('1', '2', '3', '4', '5')
+        `,
+      );
+      const updated = this.getAffectedRowCount(meta);
+      if (updated > 0) {
+        this.logger.log(
+          `Backfilled ${updated} ${tableName} row(s) from numeric correct_answer to letters`,
+        );
+      }
+    } catch (e) {
+      this.logger.warn(
+        `ensureCorrectAnswerColumnUsesLetters(${tableName}) skipped: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
   private async ensureQuestionsNewSchemaColumns(): Promise<void> {
     const queryInterface = this.sequelize.getQueryInterface();
     let questionTable: Record<string, unknown>;
@@ -450,6 +541,60 @@ export class SchemaMigrationService implements OnModuleInit {
         allowNull: true,
       });
       this.logger.log('Added questions.text column');
+    }
+  }
+
+  /**
+   * Legacy rows used `question_text`, `subject_id`, and `year` as required columns.
+   * The new API writes `text` and optional `exam_id` instead, so relax those constraints.
+   */
+  private async relaxLegacyQuestionColumns(): Promise<void> {
+    const queryInterface = this.sequelize.getQueryInterface();
+    let questionTable: Record<string, { allowNull?: boolean }>;
+    try {
+      questionTable = (await queryInterface.describeTable(
+        'questions',
+      )) as Record<string, { allowNull?: boolean }>;
+    } catch {
+      return;
+    }
+
+    const legacyColumns = ['question_text', 'subject_id', 'year'] as const;
+
+    for (const columnName of legacyColumns) {
+      const column = questionTable[columnName];
+      if (!column || column.allowNull !== false) {
+        continue;
+      }
+
+      try {
+        await this.sequelize.query(
+          `ALTER TABLE questions ALTER COLUMN ${columnName} DROP NOT NULL`,
+        );
+        this.logger.log(`Relaxed NOT NULL on questions.${columnName}`);
+      } catch (e) {
+        this.logger.warn(
+          `relaxLegacyQuestionColumns(${columnName}) skipped: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
+
+    if (questionTable.question_text && questionTable.text) {
+      const [, meta] = await this.sequelize.query(
+        `
+          UPDATE questions
+          SET question_text = text
+          WHERE question_text IS NULL
+            AND text IS NOT NULL
+            AND TRIM(text) <> ''
+        `,
+      );
+      const updated = this.getAffectedRowCount(meta);
+      if (updated > 0) {
+        this.logger.log(
+          `Backfilled questions.question_text from text on ${updated} row(s)`,
+        );
+      }
     }
   }
 
