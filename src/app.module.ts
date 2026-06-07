@@ -9,10 +9,12 @@ import { EmailModule } from './email/email.module';
 import { SectionsModule } from './sections/sections.module';
 import { UsersModule } from './users/users.module';
 import { ItemModule } from './item/item.module';
+import { ItemCourseModule } from './item-course/item-course.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
+import { ItemCourse } from './models/item-course.model';
 
 @Module({
   imports: [
@@ -63,12 +65,13 @@ import { Item } from './models/item.model';
       },
       inject: [ConfigService],
     }),
-    SequelizeModule.forFeature([User, Otp, Item]),
+    SequelizeModule.forFeature([User, Otp, Item, ItemCourse]),
     EmailModule,
     AuthModule,
     SectionsModule,
     UsersModule,
     ItemModule,
+    ItemCourseModule,
   ],
   controllers: [],
   providers: [

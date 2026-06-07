@@ -1,4 +1,12 @@
-import { Column, DataType, Default, Model, Table } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Default,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { ItemCourse } from './item-course.model';
 
 export enum ItemTypeEnum {
   CULTURE_GENERALE = 'cg',
@@ -50,6 +58,9 @@ export class Item extends Model<Item, ItemCreationAttributes> {
     allowNull: false,
   })
   declare universal: boolean;
+
+  @HasMany(() => ItemCourse)
+  declare courses: ItemCourse[];
 
   @Column({
     type: DataType.DATE,
