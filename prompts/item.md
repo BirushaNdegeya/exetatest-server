@@ -6,3 +6,6 @@ type enum : culture generale(cg), sciences(sc), cours d'options(co), langues(la)
 section_id: string
 year: int
 universal: boolean
+
+
+-> Only the admin can create and edit and other people will read

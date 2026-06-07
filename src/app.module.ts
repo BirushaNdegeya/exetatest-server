@@ -8,9 +8,11 @@ import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
 import { SectionsModule } from './sections/sections.module';
 import { UsersModule } from './users/users.module';
+import { ItemModule } from './item/item.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Otp } from './models/otp.model';
+import { Item } from './models/item.model';
 
 @Module({
   imports: [
@@ -61,11 +63,12 @@ import { Otp } from './models/otp.model';
       },
       inject: [ConfigService],
     }),
-    SequelizeModule.forFeature([User, Otp]),
+    SequelizeModule.forFeature([User, Otp, Item]),
     EmailModule,
     AuthModule,
     SectionsModule,
     UsersModule,
+    ItemModule,
   ],
   controllers: [],
   providers: [
