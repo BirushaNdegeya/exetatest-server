@@ -11,7 +11,6 @@ import { UsersModule } from './users/users.module';
 import { ItemModule } from './item/item.module';
 import { ItemCourseModule } from './item-course/item-course.module';
 import { ItemQuestionModule } from './item-question/item-question.module';
-import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
@@ -82,7 +81,6 @@ import { ItemQuestion } from './models/item-question.model';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    SchemaMigrationService,
   ],
 })
 export class AppModule {}

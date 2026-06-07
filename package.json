@@ -29,6 +29,7 @@
     "prepare": "husky",
     "grant:admin": "ts-node -r tsconfig-paths/register scripts/grant-admin.ts",
     "db:sync": "ts-node -r tsconfig-paths/register scripts/sync-database.ts",
+    "db:reset": "ts-node -r tsconfig-paths/register scripts/reset-database.ts",
     "seed:techniques-sociales": "bash scripts/seed-techniques-sociales.sh"
   },
   "dependencies": {
