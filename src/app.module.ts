@@ -10,11 +10,13 @@ import { SectionsModule } from './sections/sections.module';
 import { UsersModule } from './users/users.module';
 import { ItemModule } from './item/item.module';
 import { ItemCourseModule } from './item-course/item-course.module';
+import { ItemQuestionModule } from './item-question/item-question.module';
 import { SchemaMigrationService } from './database/schema-migration.service';
 import { User } from './models/user.model';
 import { Otp } from './models/otp.model';
 import { Item } from './models/item.model';
 import { ItemCourse } from './models/item-course.model';
+import { ItemQuestion } from './models/item-question.model';
 
 @Module({
   imports: [
@@ -65,13 +67,14 @@ import { ItemCourse } from './models/item-course.model';
       },
       inject: [ConfigService],
     }),
-    SequelizeModule.forFeature([User, Otp, Item, ItemCourse]),
+    SequelizeModule.forFeature([User, Otp, Item, ItemCourse, ItemQuestion]),
     EmailModule,
     AuthModule,
     SectionsModule,
     UsersModule,
     ItemModule,
     ItemCourseModule,
+    ItemQuestionModule,
   ],
   controllers: [],
   providers: [

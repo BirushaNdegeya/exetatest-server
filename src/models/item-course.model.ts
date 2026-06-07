@@ -3,10 +3,12 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from 'sequelize-typescript';
 import { Item } from './item.model';
+import { ItemQuestion } from './item-question.model';
 
 interface ItemCourseCreationAttributes {
   course: string;
@@ -44,6 +46,9 @@ export class ItemCourse extends Model<
 
   @BelongsTo(() => Item)
   declare item: Item;
+
+  @HasMany(() => ItemQuestion)
+  declare questions: ItemQuestion[];
 
   @Column({
     type: DataType.TEXT,
