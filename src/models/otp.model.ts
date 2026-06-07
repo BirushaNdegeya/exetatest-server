@@ -32,28 +32,28 @@ export class Otp extends Model<Otp, OtpCreationAttributes> {
     type: DataType.UUID,
     allowNull: false,
   })
-  userId: string;
+  declare userId: string;
 
   @BelongsTo(() => User)
-  user: User;
+  declare user: User;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  code: string;
+  declare code: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
   })
-  expiresAt: Date;
+  declare expiresAt: Date;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
   })
-  isVerified: boolean;
+  declare isVerified: boolean;
 
   declare createdAt: Date;
   declare updatedAt: Date;
