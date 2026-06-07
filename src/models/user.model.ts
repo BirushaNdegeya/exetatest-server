@@ -37,7 +37,7 @@ export class User extends Model<User, UserCreationAttributes> {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
   declare country: string | null;
 

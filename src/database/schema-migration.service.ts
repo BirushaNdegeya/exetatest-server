@@ -77,14 +77,32 @@ export class SchemaMigrationService implements OnModuleInit {
         }
       };
 
-      await addColumnIfMissing('pays', {
+      await addColumnIfMissing('country', {
         type: DataTypes.STRING(100),
         allowNull: true,
       });
-      await addColumnIfMissing('province', {
+      await addColumnIfMissing('region', {
         type: DataTypes.STRING(100),
         allowNull: true,
       });
+
+      if (userTable.pays && userTable.country) {
+        await this.sequelize.query(`
+          UPDATE users
+          SET country = COALESCE(country, pays)
+          WHERE pays IS NOT NULL AND TRIM(pays) <> ''
+        `);
+        this.logger.log('Migrated users.pays into users.country');
+      }
+
+      if (userTable.province && userTable.region) {
+        await this.sequelize.query(`
+          UPDATE users
+          SET region = COALESCE(region, province)
+          WHERE province IS NOT NULL AND TRIM(province) <> ''
+        `);
+        this.logger.log('Migrated users.province into users.region');
+      }
       await addColumnIfMissing('role', {
         type: DataTypes.STRING(20),
         allowNull: false,
