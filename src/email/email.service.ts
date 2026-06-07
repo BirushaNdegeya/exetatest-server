@@ -83,10 +83,7 @@ export class EmailService {
     name: string,
     inactivityDays: number,
   ): Promise<void> {
-    const appName = this.configService.get<string>(
-      'APP_NAME',
-      'EXETATEST',
-    );
+    const appName = this.configService.get<string>('APP_NAME', 'EXETATEST');
     const appUrl = this.configService.get<string>(
       'FRONTEND_URL',
       'http://localhost:5173',

@@ -11,10 +11,9 @@ import { InjectModel } from '@nestjs/sequelize';
 import { ConfigService } from '@nestjs/config';
 import { User, UserRoleEnum } from '../models/user.model';
 import { Otp } from '../models/otp.model';
-import { RefreshToken } from '../models/refresh-token.model';
 import { JwtPayload } from './jwt.strategy';
 import { EmailService } from '../email/email.service';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import { Op } from 'sequelize';
 import { UsersService } from '../users/users.service';
 
@@ -30,7 +29,6 @@ type UserAuthState = {
 
 @Injectable()
 export class AuthService {
-  private static readonly REFRESH_TOKEN_TTL_DAYS = 30;
   private static readonly OTP_TTL_MINUTES = 10;
   private static readonly OTP_RATE_LIMIT_MAX_REQUESTS = 3;
   private static readonly OTP_RATE_LIMIT_WINDOW_MINUTES = 10;
@@ -41,8 +39,6 @@ export class AuthService {
     private userModel: typeof User,
     @InjectModel(Otp)
     private otpModel: typeof Otp,
-    @InjectModel(RefreshToken)
-    private refreshTokenModel: typeof RefreshToken,
     private jwtService: JwtService,
     private emailService: EmailService,
     private usersService: UsersService,
@@ -66,33 +62,12 @@ export class AuthService {
   }
 
   async generateJwtToken(user: User): Promise<string> {
-    const payload: JwtPayload = { userId: user.id, email: user.email };
+    const payload: JwtPayload = { userId: user.id };
     return this.jwtService.sign(payload);
   }
 
   private hashSha256(value: string): string {
     return createHash('sha256').update(value, 'utf8').digest('hex');
-  }
-
-  private generateRefreshTokenRaw(): string {
-    return randomBytes(64).toString('hex');
-  }
-
-  private async createRefreshToken(user: User): Promise<string> {
-    const rawToken = this.generateRefreshTokenRaw();
-    const tokenHash = this.hashSha256(rawToken);
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + AuthService.REFRESH_TOKEN_TTL_DAYS);
-
-    await this.refreshTokenModel.create({
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-      revokedAt: null,
-    });
-
-    return rawToken;
   }
 
   private async getUserAuthState(user: User): Promise<UserAuthState> {
@@ -116,7 +91,6 @@ export class AuthService {
     options?: { notifyLoginEmail?: boolean },
   ) {
     const accessToken = await this.generateJwtToken(user);
-    const refreshToken = await this.createRefreshToken(user);
 
     if (options?.notifyLoginEmail ?? true) {
       try {
@@ -135,9 +109,7 @@ export class AuthService {
 
     return {
       access_token: accessToken,
-      refresh_token: refreshToken,
       accessToken,
-      refreshToken,
       user: userState,
     };
   }
@@ -295,53 +267,6 @@ export class AuthService {
 
     return {
       message: `User ${normalizedEmail} promoted to admin successfully`,
-    };
-  }
-
-  async refresh(refreshToken: string): Promise<{
-    access_token: string;
-    refresh_token: string;
-    accessToken: string;
-    refreshToken: string;
-    user: UserAuthState;
-  }> {
-    if (!refreshToken || !refreshToken.trim()) {
-      throw new UnauthorizedException('Refresh token manquant');
-    }
-
-    const tokenHash = this.hashSha256(refreshToken.trim());
-    const now = new Date();
-
-    const tokenRow = await this.refreshTokenModel.findOne({
-      where: { tokenHash, revokedAt: null },
-      order: [['createdAt', 'DESC']],
-    });
-
-    if (!tokenRow) {
-      throw new UnauthorizedException('Refresh token invalide');
-    }
-
-    if (tokenRow.expiresAt <= now) {
-      throw new UnauthorizedException('Refresh token expiré');
-    }
-
-    const user = await this.userModel.findByPk(tokenRow.userId);
-    if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
-    }
-
-    await tokenRow.update({ revokedAt: now });
-
-    const accessToken = await this.generateJwtToken(user);
-    const newRefreshToken = await this.createRefreshToken(user);
-    const userState = await this.getUserAuthState(user);
-
-    return {
-      access_token: accessToken,
-      refresh_token: newRefreshToken,
-      accessToken,
-      refreshToken: newRefreshToken,
-      user: userState,
     };
   }
 }
