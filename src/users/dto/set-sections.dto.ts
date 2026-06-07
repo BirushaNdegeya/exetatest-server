@@ -5,7 +5,7 @@ export class SetSectionsDto {
   @ApiProperty({
     description:
       'DRC catalog section slug from GET /sections (e.g. mecanique-generale)',
-    example: 'mecanique-generale',
+    example: 'LATIN-PHILO',
   })
   @IsString()
   @IsNotEmpty()

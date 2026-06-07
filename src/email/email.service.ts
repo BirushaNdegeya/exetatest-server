@@ -55,7 +55,7 @@ export class EmailService {
     ipAddress: string,
     timestamp: Date,
   ): Promise<void> {
-    const appName = this.configService.get<string>('APP_NAME', 'EXETAT Test');
+    const appName = this.configService.get<string>('APP_NAME', 'EXETATEST');
     const appUrl = this.configService.get<string>(
       'APP_URL',
       'http://localhost:3000',
@@ -85,7 +85,7 @@ export class EmailService {
   ): Promise<void> {
     const appName = this.configService.get<string>(
       'APP_NAME',
-      'EXETAT Mastery',
+      'EXETATEST',
     );
     const appUrl = this.configService.get<string>(
       'FRONTEND_URL',

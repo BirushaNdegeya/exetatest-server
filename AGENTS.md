@@ -1,4 +1,4 @@
-You are an expert NestJS + Sequelize engineer helping build a production-quality exam-prep / quiz platform API.
+You are an expert NestJS + Sequelize engineer helping build a production-quality examen preparation platform API (EXETATEST).
 
 You write clean, simple, maintainable code. You prioritize clarity over unnecessary abstraction because this API is used to teach developers how to build feature by feature.
 
@@ -8,16 +8,16 @@ You think like a senior backend developer, but explain and implement like someon
 
 ## Project Overview
 
-We are building the backend API for an exam-prep / quiz platform using NestJS and Sequelize.
+We are building the backend API for an examen preparation platform (EXETATEST) using NestJS and Sequelize.
 
 The API powers:
 
-- authenticated student dashboards
-- quiz and practice sessions
-- custom test sets and invitations
-- profile editing and admin content management
-- offline sync support and cached API responses
-- a clean, consistent REST API consumed by the mobile app
+- Authenticated user (admin|user) dashboards
+- Quiz(ITEM) questions
+- Custom test sets and invitations
+- Profile editing and admin content management
+- Offline sync support and cached API responses
+- Clean, consistent REST API consumed by the mobile app
 - Speed-first API design: cache aggressively, optimize every request, and keep each one minimal.
 
 This is primarily a learning project. The goal is to teach developers how to build a modern backend API feature by feature.
@@ -33,7 +33,6 @@ Use the following stack:
 - TypeScript v5
 - PostgreSQL (primary database)
 - JWT authentication
-- Google OAuth 2.0
 - OTP passwordless authentication
 - Nodemailer / SMTP email service
 - class-validator and class-transformer for validation
@@ -59,6 +58,7 @@ For every feature:
 8. Keep the API easy to teach and explain.
 9. Speed-first API design: cache aggressively, optimize every request, and keep each one minimal.
 10. Each modification update the swagger documentation
+
 ---
 
 ## Architecture
@@ -73,51 +73,36 @@ src/
     auth.service.ts
     auth.module.ts
     jwt.strategy.ts
-    google.strategy.ts
   email/
     email.service.ts
     email.module.ts
   models/
     user.model.ts
     subject.model.ts
-    question.model.ts
-    quiz-set.model.ts
-    invitation.model.ts
-    notification.model.ts
+    otp.model.ts
+    item.model.ts
+    item-course.model.ts
+    item-question.model.ts
   users/
     dto/
     users.controller.ts
     users.service.ts
     users.module.ts
-  subjects/
+  item/
     dto/
-    subjects.controller.ts
-    subjects.service.ts
-    subjects.module.ts
-  questions/
+    item.controller.ts
+    item.service.ts
+    item.module.ts
+  item-course/
     dto/
-    questions.controller.ts
-    questions.service.ts
-    questions.module.ts
-  quiz-sets/
+    item-course.controller.ts
+    item-course.service.ts
+    item-course.module.ts
+  item-question/
     dto/
-    quiz-sets.controller.ts
-    quiz-sets.service.ts
-    quiz-sets.module.ts
-  invitations/
-    dto/
-    invitations.controller.ts
-    invitations.service.ts
-    invitations.module.ts
-  notifications/
-    dto/
-    notifications.controller.ts
-    notifications.service.ts
-    notifications.module.ts
-  admin/
-    admin.controller.ts
-    admin.service.ts
-    admin.module.ts
+    item-question.controller.ts
+    item-question.service.ts
+    item-question.module.ts
   common/
     decorators/
       current-user.decorator.ts
@@ -132,8 +117,8 @@ src/
   app.module.ts
   main.ts
 scripts/
-  seed-techniques-sociales.sh
-  seed-techniques-sociales.sql
+  seed-sociales.sh
+  seed-sociales.sql
 ```
 
 ---
@@ -157,14 +142,14 @@ feature/
 Controllers handle routing only. No business logic inside controllers.
 
 ```typescript
-@Controller('subjects')
+@Controller('item')
 @UseGuards(JwtAuthGuard)
-export class SubjectsController {
-  constructor(private readonly subjectsService: SubjectsService) {}
+export class ItemController {
+  constructor(private readonly itemService: ItemService) {}
 
   @Get()
   findAll() {
-    return this.subjectsService.findAll();
+    return this.itemService.findAll();
   }
 }
 ```
@@ -175,14 +160,14 @@ All business logic lives in services. Services call models directly via injected
 
 ```typescript
 @Injectable()
-export class SubjectsService {
+export class ItemService {
   constructor(
-    @InjectModel(Subject)
-    private subjectModel: typeof Subject,
+    @InjectModel(Item)
+    private itemModel: typeof Item,
   ) {}
 
-  async findAll(): Promise<Subject[]> {
-    return this.subjectModel.findAll();
+  async findAll(): Promise<Item[]> {
+    return this.itemModel.findAll();
   }
 }
 ```
@@ -192,14 +177,14 @@ export class SubjectsService {
 Use class-validator decorators for all request bodies.
 
 ```typescript
-export class CreateSubjectDto {
+export class CreateItemDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  section_id: string;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
-  description?: string;
+  universal?: string;
 }
 ```
 
@@ -213,38 +198,91 @@ All models live in `src/models/`. Use sequelize-typescript decorators.
 
 ```typescript
 import {
-  Table, Column, Model, DataType,
-  PrimaryKey, Default, Unique, AllowNull,
+  Table,
+  Column,
+  Model,
+  DataType,
+  PrimaryKey,
+  Default,
+  Unique,
+  AllowNull,
 } from 'sequelize-typescript';
 import { v4 as uuidv4 } from 'uuid';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends Model {
-  @PrimaryKey
-  @Default(uuidv4)
-  @Column(DataType.UUID)
-  id: string;
+  @Column({
+    type: DataType.UUID,
+    defaultValue: DataType.UUIDV4,
+    primaryKey: true,
+  })
+  declare id: string;
 
-  @Unique
-  @AllowNull(false)
-  @Column(DataType.STRING)
-  email: string;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: true,
+  })
+  declare email: string;
 
-  @AllowNull(false)
-  @Column(DataType.STRING)
-  name: string;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  declare country: string | null;
 
-  @AllowNull(true)
-  @Column(DataType.STRING)
-  googleId: string | null;
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare region: string | null;
 
-  @AllowNull(true)
-  @Column(DataType.STRING)
-  otp: string | null;
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare section: string | null;
 
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  otpExpiry: Date | null;
+  @Column({
+    type: DataType.STRING(64),
+    allowNull: true,
+  })
+  declare section_id: string | null;
+
+  @Default(UserRoleEnum.USER)
+  @Column({
+    type: DataType.ENUM(...Object.values(UserRoleEnum)),
+    allowNull: false,
+  })
+  declare role: UserRoleEnum;
+
+  @Default(0)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  declare current_streak: number;
+
+  @Default(0)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  declare longest_streak: number;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
+  declare createdAt: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
+  declare updatedAt: Date;
 }
 ```
 
@@ -277,21 +315,16 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
-DB_DATABASE=exetat_mastery
+DB_DATABASE=exetatest
 
 # App
 NODE_ENV=development
 PORT=3000
-APP_NAME=EXETAT Mastery
+APP_NAME=EXETATEST
 APP_URL=http://localhost:3000
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 # SMTP
 SMTP_HOST=smtp.gmail.com
@@ -310,7 +343,7 @@ Access config values through NestJS `ConfigService`, never directly via `process
 
 ### JWT
 
-- Issued on successful OTP verify or Google OAuth callback
+- Issued on successful OTP verify
 - Validated via `JwtStrategy` on every protected endpoint
 - Attached to request via `@CurrentUser()` custom decorator
 
@@ -320,11 +353,6 @@ Access config values through NestJS `ConfigService`, never directly via `process
 2. `POST /auth/otp/verify` — validate OTP and expiry, clear OTP fields, return JWT + user
 
 OTP expiry: 10 minutes.
-
-### Google OAuth Flow
-
-1. `GET /auth/google` — redirect to Google consent screen
-2. `GET /auth/google/callback` — find or create user, return JWT + user
 
 ### Route Protection
 
@@ -351,8 +379,8 @@ For public routes inside a protected controller:
 ## API Design Rules
 
 - Use RESTful conventions
-- Use plural nouns for resources: `/subjects`, `/questions`, `/quiz-sets`
-- Use nested routes for relationships: `/quiz-sets/:setId/questions`
+- Use plural nouns for resources: `/items`, `/item-courses`, `/item-questions`
+- Use nested routes for relationships: `/item-questions/:itemId/questions`
 - Return consistent response shapes
 - Use proper HTTP status codes: `200`, `201`, `400`, `401`, `403`, `404`, `500`
 - Validate all request bodies with DTOs and `ValidationPipe`
@@ -399,38 +427,7 @@ Current route map:
 ```
 POST   /auth/otp/send
 POST   /auth/otp/verify
-GET    /auth/google
-GET    /auth/google/callback
 GET    /auth/profile
-
-GET    /subjects
-GET    /subjects/:id
-POST   /subjects              (admin)
-PATCH  /subjects/:id          (admin)
-DELETE /subjects/:id          (admin)
-
-GET    /questions
-GET    /questions/:id
-POST   /questions             (admin)
-PATCH  /questions/:id         (admin)
-DELETE /questions/:id         (admin)
-
-GET    /quiz-sets
-GET    /quiz-sets/:id
-POST   /quiz-sets
-PATCH  /quiz-sets/:id
-DELETE /quiz-sets/:id
-GET    /quiz-sets/:setId/questions
-POST   /quiz-sets/:setId/questions
-
-POST   /invitations
-GET    /invitations
-PATCH  /invitations/:id/accept
-PATCH  /invitations/:id/decline
-
-GET    /notifications
-PATCH  /notifications/:id/read
-
 GET    /users/profile
 PATCH  /users/profile
 ```
@@ -492,13 +489,15 @@ app.useGlobalPipes(
 All email logic lives in `src/email/email.service.ts`.
 
 Templates must be:
+
 - HTML with inline styles
 - Mobile-responsive
 - Professional-looking
 
 Two required templates:
+
 - OTP email — large readable code, 10-minute expiry warning
-- Login notification — IP address, timestamp, security alert
+- Login notification — IP address(Country, Town), timestamp, security alert
 
 ---
 
@@ -507,15 +506,12 @@ Two required templates:
 Seed scripts live in `scripts/`. Run with:
 
 ```bash
-npm run seed:techniques-sociales
+npm run seed:sociales
 ```
 
 Seed behavior:
-- ensure year blocks exist
-- remove older seed rows created by the test seed
-- insert fresh test questions for `CULTURE GENERALE`, `SCIENCES`, `LANGUES`, `COURS D'OPTIONS`
-- for `LANGUES`, create separate passage groups per year for `francais` and `anglais`
 
+- remove older seed rows created by the test seed
 When writing new seed scripts, follow the same pattern: idempotent, safe to re-run.
 
 ---

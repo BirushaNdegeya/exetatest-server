@@ -6,7 +6,7 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({
     description:
       'Section slug from GET /sections (e.g. mecanique-generale). Send null to clear.',
-    example: 'mecanique-generale',
+    example: 'LATIN-PHILO',
     nullable: true,
   })
   @IsOptional()

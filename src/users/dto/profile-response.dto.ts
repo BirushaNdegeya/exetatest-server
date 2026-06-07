@@ -16,7 +16,7 @@ export class ProfileResponseDto {
   section: string | null;
 
   @ApiPropertyOptional({
-    example: 'mecanique-generale',
+    example: 'LATIN-PHILO',
     description:
       'DRC catalog section slug from GET /sections — use for routing and PATCH updates',
     nullable: true,
