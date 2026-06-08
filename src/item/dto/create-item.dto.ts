@@ -22,8 +22,9 @@ export class CreateItemDto {
   type: ItemTypeEnum;
 
   @ApiProperty({
-    example: 'mecanique-generale',
-    description: 'Section slug from GET /sections',
+    example: '08',
+    description:
+      'DRC catalog section id from GET /sections or GET /admin/sections',
   })
   @IsString()
   @IsNotEmpty()

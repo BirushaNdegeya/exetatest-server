@@ -6,6 +6,7 @@ import { User } from '../models/user.model';
 import { ItemService } from './item.service';
 import { ItemController } from './item.controller';
 import { AdminItemsController } from './admin-items.controller';
+import { AdminItemController } from './admin-item.controller';
 import { SectionsModule } from '../sections/sections.module';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -15,7 +16,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
     SectionsModule,
   ],
   providers: [ItemService, RolesGuard],
-  controllers: [ItemController, AdminItemsController],
+  controllers: [ItemController, AdminItemsController, AdminItemController],
   exports: [ItemService],
 })
 export class ItemModule {}
