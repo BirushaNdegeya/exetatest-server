@@ -45,7 +45,7 @@ export class AdminSectionsController {
   @ApiOperation({
     summary: 'List sections with item counts (admin only)',
     description:
-      'Returns distinct section_id values from the items table with how many items belong to each.',
+      'Returns the full DRC section catalog with how many items belong to each section (0 when none).',
   })
   @ApiOkResponse({
     description: 'Sections returned successfully',
@@ -54,7 +54,8 @@ export class AdminSectionsController {
       items: {
         type: 'object',
         properties: {
-          section_id: { type: 'string', example: 'math-101' },
+          section_id: { type: 'string', example: '12' },
+          title: { type: 'string', example: 'MÉCANIQUE GÉNÉRALE' },
           itemCount: { type: 'number', example: 42 },
         },
       },

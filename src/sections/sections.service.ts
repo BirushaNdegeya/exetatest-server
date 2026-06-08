@@ -18,6 +18,7 @@ export type AdminStatsResponse = {
 
 export type AdminSectionSummary = {
   section_id: string;
+  title: string;
   itemCount: number;
 };
 
@@ -83,13 +84,17 @@ export class SectionsService {
     const rows = (await this.itemModel.findAll({
       attributes: ['section_id', [fn('COUNT', col('id')), 'itemCount']],
       group: ['section_id'],
-      order: [['section_id', 'ASC']],
       raw: true,
     })) as unknown as Array<{ section_id: string; itemCount: string | number }>;
 
-    return rows.map((row) => ({
-      section_id: row.section_id,
-      itemCount: Number(row.itemCount),
+    const itemCountBySectionId = new Map(
+      rows.map((row) => [row.section_id, Number(row.itemCount)]),
+    );
+
+    return DRC_SECTIONS.map((section) => ({
+      section_id: section.id,
+      title: section.title,
+      itemCount: itemCountBySectionId.get(section.id) ?? 0,
     }));
   }
 }
