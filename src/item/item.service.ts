@@ -4,19 +4,31 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { FindOptions, WhereOptions } from 'sequelize';
+import { FindOptions, Op, WhereOptions, fn, col } from 'sequelize';
 import { Item } from '../models/item.model';
+import { ItemCourse } from '../models/item-course.model';
+import { AdminSectionItemsQueryDto } from './dto/admin-section-items-query.dto';
 import { SectionsService } from '../sections/sections.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ItemQueryDto } from './dto/item-query.dto';
 import { ItemResponseDto } from './dto/item-response.dto';
 
+export type AdminItemSummary = {
+  id: string;
+  type: Item['type'];
+  universal: boolean;
+  year: number;
+  courseCount: number;
+};
+
 @Injectable()
 export class ItemService {
   constructor(
     @InjectModel(Item)
     private readonly itemModel: typeof Item,
+    @InjectModel(ItemCourse)
+    private readonly itemCourseModel: typeof ItemCourse,
     private readonly sectionsService: SectionsService,
   ) {}
 
@@ -142,5 +154,73 @@ export class ItemService {
 
     await item.update(updates);
     return this.toResponse(item);
+  }
+
+  private async getCourseCountsByItemIds(
+    itemIds: string[],
+  ): Promise<Map<string, number>> {
+    if (itemIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = (await this.itemCourseModel.findAll({
+      attributes: ['item_id', [fn('COUNT', col('id')), 'courseCount']],
+      where: { item_id: { [Op.in]: itemIds } },
+      group: ['item_id'],
+      raw: true,
+    })) as unknown as Array<{ item_id: string; courseCount: string | number }>;
+
+    return new Map(rows.map((row) => [row.item_id, Number(row.courseCount)]));
+  }
+
+  async findBySectionAdmin(
+    sectionId: string,
+    query: AdminSectionItemsQueryDto,
+  ): Promise<{
+    items: AdminItemSummary[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+    const where: WhereOptions<Item> = { section_id: sectionId.trim() };
+
+    if (query.universal !== undefined) {
+      where.universal = query.universal;
+    }
+    if (query.year !== undefined) {
+      where.year = query.year;
+    }
+
+    const { rows, count } = await this.itemModel.findAndCountAll({
+      where,
+      order: [
+        ['year', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+      limit,
+      offset,
+    });
+
+    const courseCounts = await this.getCourseCountsByItemIds(
+      rows.map((item) => item.id),
+    );
+    const total = count;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      items: rows.map((item) => ({
+        id: item.id,
+        type: item.type,
+        universal: item.universal,
+        year: item.year,
+        courseCount: courseCounts.get(item.id) ?? 0,
+      })),
+      total,
+      page,
+      totalPages,
+    };
   }
 }

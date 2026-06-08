@@ -1,3 +1,5 @@
+Read AGENTS.md first and follow it strictly.
+
 ## Styling Rules
 
 Style requirements for this project:

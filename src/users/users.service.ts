@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op, WhereOptions } from 'sequelize';
 import { User, UserRoleEnum } from '../models/user.model';
+import {
+  AdminUserSortField,
+  AdminUsersQueryDto,
+  SortOrder,
+} from './dto/admin-users-query.dto';
 import { isConfiguredAdminEmail } from '../auth/utils/admin-access.util';
 import { SectionsService } from '../sections/sections.service';
 import { findSectionMatchingLegacyLabel } from '../sections/section-legacy-match.util';
@@ -21,6 +27,20 @@ type UserAuthState = {
 export type UserStreakSnapshot = {
   current_streak: number;
   longest_streak: number;
+};
+
+export type AdminUserSummary = {
+  id: string;
+  email: string;
+  country: string | null;
+  region: string | null;
+  section: string | null;
+  section_id: string | null;
+  role: UserRoleEnum;
+  current_streak: number;
+  longest_streak: number;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 @Injectable()
@@ -200,5 +220,74 @@ export class UsersService {
   ): Promise<UserAuthState> {
     await this.updateProfile(userId, { section_id: sectionId });
     return this.getUserAuthState(userId);
+  }
+
+  private toAdminUserSummary(user: User): AdminUserSummary {
+    return {
+      id: user.id,
+      email: user.email,
+      country: user.country,
+      region: user.region,
+      section: user.section,
+      section_id: user.section_id,
+      role: user.role,
+      current_streak: user.current_streak,
+      longest_streak: user.longest_streak,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
+
+  async findAllAdmin(query: AdminUsersQueryDto): Promise<{
+    users: AdminUserSummary[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+    const where: WhereOptions<User> = {};
+
+    if (query.email?.trim()) {
+      where.email = { [Op.iLike]: `%${query.email.trim()}%` };
+    }
+    if (query.role !== undefined) {
+      where.role = query.role;
+    }
+
+    const sortBy = query.sortBy ?? AdminUserSortField.CREATED_AT;
+    const order = query.order ?? SortOrder.DESC;
+
+    const { rows, count } = await this.userModel.findAndCountAll({
+      where,
+      order: [[sortBy, order]],
+      limit,
+      offset,
+    });
+
+    const total = count;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      users: rows.map((user) => this.toAdminUserSummary(user)),
+      total,
+      page,
+      totalPages,
+    };
+  }
+
+  async updateUserRole(
+    userId: string,
+    role: UserRoleEnum,
+  ): Promise<AdminUserSummary> {
+    const user = await this.getUserOrFail(userId);
+    await user.update({ role });
+    return this.toAdminUserSummary(user);
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.getUserOrFail(userId);
+    await user.destroy();
   }
 }

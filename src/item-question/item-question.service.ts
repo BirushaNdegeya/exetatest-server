@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { FindOptions, WhereOptions } from 'sequelize';
 import { ItemCourse } from '../models/item-course.model';
 import { ItemQuestion } from '../models/item-question.model';
+import { AdminCreateItemQuestionDto } from './dto/admin-create-item-question.dto';
 import { CreateItemQuestionDto } from './dto/create-item-question.dto';
 import { UpdateItemQuestionDto } from './dto/update-item-question.dto';
 import { ItemQuestionQueryDto } from './dto/item-question-query.dto';
@@ -167,5 +168,31 @@ export class ItemQuestionService {
 
     await itemQuestion.update(updates);
     return this.toResponse(itemQuestion);
+  }
+
+  async findByCourseId(courseId: string): Promise<ItemQuestionResponseDto[]> {
+    await this.ensureItemCourseExists(courseId);
+    const questions = await this.itemQuestionModel.findAll({
+      where: { item_course_id: courseId },
+      order: [['createdAt', 'ASC']],
+    });
+    return questions.map((question) => this.toResponse(question));
+  }
+
+  async createForCourse(
+    courseId: string,
+    dto: AdminCreateItemQuestionDto,
+  ): Promise<ItemQuestionResponseDto> {
+    return this.create({
+      item_course_id: courseId,
+      question: dto.question,
+      options: dto.options,
+      answer: dto.answer,
+    });
+  }
+
+  async remove(questionId: string): Promise<void> {
+    const itemQuestion = await this.getItemQuestionOrFail(questionId);
+    await itemQuestion.destroy();
   }
 }

@@ -3,10 +3,32 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { fn, col } from 'sequelize';
+import { Item } from '../models/item.model';
+import { User, UserRoleEnum } from '../models/user.model';
 import { DRC_SECTIONS, DrcSection } from './drc-sections.constants';
+
+export type AdminStatsResponse = {
+  totalItems: number;
+  totalSections: number;
+  totalUsers: number;
+  totalAdmins: number;
+};
+
+export type AdminSectionSummary = {
+  section_id: string;
+  itemCount: number;
+};
 
 @Injectable()
 export class SectionsService {
+  constructor(
+    @InjectModel(Item)
+    private readonly itemModel: typeof Item,
+    @InjectModel(User)
+    private readonly userModel: typeof User,
+  ) {}
   /**
    * Validates a section id for profile PATCH. Returns null to clear. Throws if id is not found.
    */
@@ -43,5 +65,31 @@ export class SectionsService {
       throw new NotFoundException('Section introuvable');
     }
     return section;
+  }
+
+  async getAdminStats(): Promise<AdminStatsResponse> {
+    const [totalItems, totalSections, totalUsers, totalAdmins] =
+      await Promise.all([
+        this.itemModel.count(),
+        this.itemModel.count({ distinct: true, col: 'section_id' }),
+        this.userModel.count(),
+        this.userModel.count({ where: { role: UserRoleEnum.ADMIN } }),
+      ]);
+
+    return { totalItems, totalSections, totalUsers, totalAdmins };
+  }
+
+  async getAdminSections(): Promise<AdminSectionSummary[]> {
+    const rows = (await this.itemModel.findAll({
+      attributes: ['section_id', [fn('COUNT', col('id')), 'itemCount']],
+      group: ['section_id'],
+      order: [['section_id', 'ASC']],
+      raw: true,
+    })) as unknown as Array<{ section_id: string; itemCount: string | number }>;
+
+    return rows.map((row) => ({
+      section_id: row.section_id,
+      itemCount: Number(row.itemCount),
+    }));
   }
 }

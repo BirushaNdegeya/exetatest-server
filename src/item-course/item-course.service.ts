@@ -3,14 +3,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { FindOptions, WhereOptions } from 'sequelize';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
+import { FindOptions, Sequelize, WhereOptions } from 'sequelize';
 import { Item } from '../models/item.model';
 import { ItemCourse } from '../models/item-course.model';
+import { ItemQuestion } from '../models/item-question.model';
+import { AdminCreateItemCourseDto } from './dto/admin-create-item-course.dto';
+import { AdminUpdateItemCourseDto } from './dto/admin-update-item-course.dto';
+import { ItemQuestionResponseDto } from '../item-question/dto/item-question-response.dto';
 import { CreateItemCourseDto } from './dto/create-item-course.dto';
 import { UpdateItemCourseDto } from './dto/update-item-course.dto';
 import { ItemCourseQueryDto } from './dto/item-course-query.dto';
 import { ItemCourseResponseDto } from './dto/item-course-response.dto';
+
+export type AdminCourseWithQuestions = ItemCourseResponseDto & {
+  questions: ItemQuestionResponseDto[];
+};
 
 @Injectable()
 export class ItemCourseService {
@@ -19,6 +27,10 @@ export class ItemCourseService {
     private readonly itemCourseModel: typeof ItemCourse,
     @InjectModel(Item)
     private readonly itemModel: typeof Item,
+    @InjectModel(ItemQuestion)
+    private readonly itemQuestionModel: typeof ItemQuestion,
+    @InjectConnection()
+    private readonly sequelize: Sequelize,
   ) {}
 
   private toResponse(itemCourse: ItemCourse): ItemCourseResponseDto {
@@ -142,5 +154,100 @@ export class ItemCourseService {
 
     await itemCourse.update(updates);
     return this.toResponse(itemCourse);
+  }
+
+  async findByItemId(itemId: string): Promise<ItemCourseResponseDto[]> {
+    await this.ensureItemExists(itemId);
+    const courses = await this.itemCourseModel.findAll({
+      where: { item_id: itemId },
+      order: [
+        ['course', 'ASC'],
+        ['createdAt', 'DESC'],
+      ],
+    });
+    return courses.map((course) => this.toResponse(course));
+  }
+
+  async createForItem(
+    itemId: string,
+    dto: AdminCreateItemCourseDto,
+  ): Promise<ItemCourseResponseDto> {
+    return this.create({
+      item_id: itemId,
+      course: dto.course,
+      passage: dto.passage,
+    });
+  }
+
+  private toQuestionResponse(question: ItemQuestion): ItemQuestionResponseDto {
+    return {
+      id: question.id,
+      question: question.question,
+      item_course_id: question.item_course_id,
+      options: question.options,
+      answer: question.answer,
+      created_at: question.createdAt,
+      updated_at: question.updatedAt,
+    };
+  }
+
+  async findOneWithQuestions(
+    courseId: string,
+  ): Promise<AdminCourseWithQuestions> {
+    const itemCourse = await this.itemCourseModel.findByPk(courseId, {
+      include: [
+        {
+          model: ItemQuestion,
+          separate: true,
+          order: [['createdAt', 'ASC']],
+        },
+      ],
+    });
+
+    if (!itemCourse) {
+      throw new NotFoundException('Cours introuvable');
+    }
+
+    return {
+      ...this.toResponse(itemCourse),
+      questions: (itemCourse.questions ?? []).map((question) =>
+        this.toQuestionResponse(question),
+      ),
+    };
+  }
+
+  async updateAdmin(
+    courseId: string,
+    dto: AdminUpdateItemCourseDto,
+  ): Promise<ItemCourseResponseDto> {
+    const itemCourse = await this.getItemCourseOrFail(courseId);
+    const updates: Partial<Pick<ItemCourse, 'course' | 'passage'>> = {};
+
+    if (dto.course !== undefined) {
+      updates.course = this.normalizeCourse(dto.course);
+    }
+    if (dto.passage !== undefined) {
+      updates.passage =
+        dto.passage === null ? null : dto.passage.trim() || null;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      throw new BadRequestException('Aucun champ à mettre à jour');
+    }
+
+    await itemCourse.update(updates);
+    return this.toResponse(itemCourse);
+  }
+
+  async remove(courseId: string): Promise<void> {
+    const itemCourse = await this.getItemCourseOrFail(courseId);
+
+    await this.sequelize.transaction(async (transaction) => {
+      await this.itemQuestionModel.destroy({
+        where: { item_course_id: courseId },
+        transaction,
+      });
+      await itemCourse.destroy({ transaction });
+    });
   }
 }
