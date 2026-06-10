@@ -23,8 +23,6 @@ export class CreateItemDto {
 
   @ApiProperty({
     example: '08',
-    description:
-      'DRC catalog section id from GET /sections or GET /admin/sections',
   })
   @IsString()
   @IsNotEmpty()

@@ -3,9 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 export class SetSectionsDto {
   @ApiProperty({
-    description:
-      'DRC catalog section slug from GET /sections (e.g. mecanique-generale)',
-    example: 'LATIN-PHILO',
+    example: '01',
   })
   @IsString()
   @IsNotEmpty()

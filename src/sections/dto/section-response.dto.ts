@@ -2,11 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class SectionResponseDto {
   @ApiProperty({
-    example: 'mecanique-generale',
-    description: 'Stable section slug from the DRC catalog',
+    example: '01',
   })
   id: string;
 
-  @ApiProperty({ example: 'MÉCANIQUE GÉNÉRALE' })
+  @ApiProperty({ example: 'LATIN-PHILO' })
   title: string;
 }

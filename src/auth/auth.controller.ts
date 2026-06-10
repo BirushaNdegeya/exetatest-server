@@ -15,9 +15,9 @@ import { MakeAdminDto } from './dto/make-admin.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // Google OAuth endpoints removed – using email + OTP only
+  // Email + OTP
 
-  @Post(['request-otp', 'otp/send'])
+  @Post('otp/send')
   @ApiOperation({ summary: 'Send OTP to user email' })
   @ApiBody({
     schema: {
@@ -30,11 +30,11 @@ export class AuthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'OTP sent successfully',
+    description: 'OTP envoyé avec succès',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'OTP sent successfully' },
+        message: { type: 'string', example: 'OTP envoyé avec succès' },
       },
     },
   })
@@ -44,7 +44,7 @@ export class AuthController {
     return this.authService.sendOTP(email, ipAddress);
   }
 
-  @Post(['verify-otp', 'otp/verify'])
+  @Post('otp/verify')
   @ApiOperation({ summary: 'Verify OTP and login user' })
   @ApiBody({
     schema: {
@@ -67,11 +67,8 @@ export class AuthController {
         user: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
             email: { type: 'string' },
             hasSelectedSections: { type: 'boolean' },
-            isFirstLogin: { type: 'boolean' },
-            section_id: { type: 'string', nullable: true },
             current_streak: { type: 'number', example: 4 },
             longest_streak: { type: 'number', example: 9 },
           },
@@ -122,27 +119,5 @@ export class AuthController {
   @ApiResponse({ status: 500, description: 'Admin secret not configured' })
   async makeAdmin(@Body() dto: MakeAdminDto) {
     return this.authService.promoteToAdminByEmail(dto.email, dto.adminSecret);
-  }
-
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns user profile',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        email: { type: 'string' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  getProfile(@Req() req) {
-    return req.user;
   }
 }

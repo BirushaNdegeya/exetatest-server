@@ -18,11 +18,8 @@ import { Op } from 'sequelize';
 import { UsersService } from '../users/users.service';
 
 type UserAuthState = {
-  id: string;
   email: string;
   hasSelectedSections: boolean;
-  isFirstLogin: boolean;
-  section_id: string | null;
   current_streak: number;
   longest_streak: number;
 };
@@ -75,11 +72,8 @@ export class AuthService {
     const hasSelectedSections = Boolean(user.section_id);
 
     return {
-      id: user.id,
       email: user.email,
       hasSelectedSections,
-      isFirstLogin: !hasSelectedSections,
-      section_id: user.section_id ?? null,
       current_streak: streak.current_streak ?? 0,
       longest_streak: streak.longest_streak ?? 0,
     };
@@ -190,7 +184,7 @@ export class AuthService {
         new Date(),
       );
     } catch (error) {
-      console.error('Failed to send OTP email:', error);
+      // console.error('Failed to send OTP email:', error);
       throw new Error("Échec de l'envoi de l'OTP par email");
     }
 

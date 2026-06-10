@@ -8,7 +8,7 @@ export class ItemResponseDto {
   @ApiProperty({ enum: ItemTypeEnum, example: ItemTypeEnum.SCIENCES })
   type: ItemTypeEnum;
 
-  @ApiProperty({ example: 'mecanique-generale' })
+  @ApiProperty({ example: '01' })
   section_id: string;
 
   @ApiProperty({ example: 2024 })

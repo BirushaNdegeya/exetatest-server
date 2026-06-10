@@ -4,9 +4,7 @@ import { IsOptional, IsString, ValidateIf } from 'class-validator';
 /** Body for PATCH /users/me/profile — all fields optional; omit keys you do not want to change. */
 export class UpdateProfileDto {
   @ApiPropertyOptional({
-    description:
-      'Section slug from GET /sections (e.g. mecanique-generale). Send null to clear.',
-    example: 'LATIN-PHILO',
+    example: '01',
     nullable: true,
   })
   @IsOptional()

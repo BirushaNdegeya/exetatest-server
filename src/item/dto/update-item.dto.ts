@@ -20,8 +20,7 @@ export class UpdateItemDto {
   type?: ItemTypeEnum;
 
   @ApiPropertyOptional({
-    example: 'mecanique-generale',
-    description: 'Section slug from GET /sections',
+    example: '01',
   })
   @IsOptional()
   @IsString()

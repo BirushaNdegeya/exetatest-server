@@ -20,12 +20,6 @@ import { ProfileResponseDto } from './dto/profile-response.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('me/roles')
-  @ApiOperation({ summary: 'Get my role' })
-  async getMyRoles(@CurrentUser() user: { id: string }) {
-    return this.usersService.getUserRoles(user.id);
-  }
-
   @Get('me/is-admin')
   @ApiOperation({ summary: 'Check if I am an admin' })
   async isAdmin(@CurrentUser() user: { id: string }) {

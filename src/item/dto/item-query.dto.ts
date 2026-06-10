@@ -17,7 +17,7 @@ export class ItemQueryDto {
   @IsEnum(ItemTypeEnum)
   type?: ItemTypeEnum;
 
-  @ApiPropertyOptional({ example: 'mecanique-generale' })
+  @ApiPropertyOptional({ example: '01' })
   @IsOptional()
   @IsString()
   section_id?: string;
