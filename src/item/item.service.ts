@@ -129,6 +129,20 @@ export class ItemService {
     return this.toResponse(item);
   }
 
+  async findRandom(query: ItemQueryDto): Promise<ItemResponseDto> {
+    const where = this.buildWhereClause(query);
+    const item = await this.itemModel.findOne({
+      where,
+      order: [fn('RANDOM')],
+    });
+
+    if (!item) {
+      throw new NotFoundException('No item found matching the criteria');
+    }
+
+    return this.toResponse(item);
+  }
+
   async update(id: string, dto: UpdateItemDto): Promise<ItemResponseDto> {
     const item = await this.getItemOrFail(id);
     const updates: Partial<

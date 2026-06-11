@@ -81,6 +81,25 @@ export class ItemController {
     return this.itemService.findAll(query);
   }
 
+  // Get random item
+
+  @Get('/random')
+  @ApiOperation({
+    summary: 'Get random item',
+    description:
+      'Returns a random quiz item based on type and section_id filters.',
+  })
+  @ApiOkResponse({
+    description: 'Random item returned successfully',
+    type: ItemResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  findRandom(@Query() query: ItemQueryDto) {
+    return this.itemService.findRandom(query);
+  }
+
+  // Item by id
+
   @Get(':id')
   @ApiOperation({ summary: 'Get one item by id' })
   @ApiOkResponse({

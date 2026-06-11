@@ -8,17 +8,13 @@ export class ProfileResponseDto {
   email: string;
 
   @ApiPropertyOptional({
-    description:
-      'Resolved section label (convenience); canonical key is section_id',
-    example: 'MECANIQUE GENERALE',
+    example: 'LATIN-PHILO',
     nullable: true,
   })
   section: string | null;
 
   @ApiPropertyOptional({
-    example: 'LATIN-PHILO',
-    description:
-      'DRC catalog section slug from GET /sections — use for routing and PATCH updates',
+    example: '01',
     nullable: true,
   })
   section_id: string | null;
