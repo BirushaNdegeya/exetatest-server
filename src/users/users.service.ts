@@ -146,23 +146,13 @@ export class UsersService {
     return this.toProfileResponse(user);
   }
 
-  async persistMatchedLegacySection(
-    userId: string,
-    sectionId: string,
-    canonicalTitle: string,
-  ): Promise<void> {
-    await this.userModel.update(
-      { section_id: sectionId, section: canonicalTitle },
-      { where: { id: userId } },
-    );
-  }
-
   async updateProfile(
     userId: string,
     data: UpdateProfileDto,
   ): Promise<ProfileResponseDto> {
     const user = await this.getUserOrFail(userId);
 
+    // Filter out undefined values (allow null to clear fields)
     const patch = Object.fromEntries(
       Object.entries(data as Record<string, unknown>).filter(
         ([, v]) => v !== undefined,
@@ -171,6 +161,7 @@ export class UsersService {
 
     const updatePayload: Record<string, unknown> = { ...patch };
 
+    // Handle section_id specially - it requires syncing with the section label
     if (Object.prototype.hasOwnProperty.call(patch, 'section_id')) {
       const resolved = this.sectionsService.resolveSectionIdForProfile(
         patch.section_id as string | null,
@@ -182,6 +173,32 @@ export class UsersService {
       } else {
         updatePayload.section = null;
       }
+    }
+
+    // Handle other fields: country, region, section
+    // Note: 'section' should only be updated if 'section_id' is NOT being updated
+    // to avoid conflicts (section is derived from section_id)
+    if (
+      Object.prototype.hasOwnProperty.call(patch, 'country') &&
+      !Object.prototype.hasOwnProperty.call(patch, 'section_id')
+    ) {
+      updatePayload.country = patch.country;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(patch, 'region') &&
+      !Object.prototype.hasOwnProperty.call(patch, 'section_id')
+    ) {
+      updatePayload.region = patch.region;
+    }
+
+    // Direct section update (legacy support) - only if section_id is not being updated
+    if (
+      Object.prototype.hasOwnProperty.call(patch, 'section') &&
+      !Object.prototype.hasOwnProperty.call(patch, 'section_id')
+    ) {
+      updatePayload.section = patch.section;
+      // Don't clear section_id when manually setting section
     }
 
     if (Object.keys(updatePayload).length > 0) {
